@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=Montserrat:wght@700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root,
+.app {
+  height: 100%;
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 20px;
+}
+
+.resultProductContainer::-webkit-scrollbar {
+  width: 8px;
+  height: 20px;
+  border-radius: 10px;
+  background: #e0ccbc;
+}
+.resultProductContainer::-webkit-scrollbar-thumb {
+  background: #f25ea3;
+  border-radius: 10px;
+}
+.resultProductContainer {
+  max-height: 24rem; /* 96 is usually 24rem */
+  overflow-y: auto; /* Ensure it is set to auto to enable scrolling */
+  border: 1px solid #ccc; /* Optional: To visualize the container */
+}
