@@ -1,4 +1,3 @@
-import { SelectedPage } from '@/Shared/types';
 import Slide1 from '@/assets/slideshow1.jpg';
 import Slide2 from '@/assets/slideshow2.jpg';
 import Slide3 from '@/assets/slideshow3.jpg';
@@ -13,12 +12,10 @@ import Brand7 from '@/assets/cocoon.jpg';
 import { useState } from 'react';
 import ActionButton from '@/Shared/ActionButton';
 import Items from '@/components/Items/Items';
+import CategoriesOfInterest from './CategoriesOfInterest';
+import BlogPage from '../BlogPage/BlogPage';
 
-type Props = {
-  setSelectedPage: (value: SelectedPage) => void;
-};
-
-const HomePage = ({ setSelectedPage }: Props) => {
+const HomePage = () => {
   const imageSlideList = [Slide1, Slide2, Slide3];
   const brandHightlight = [
     Brand1,
@@ -34,7 +31,7 @@ const HomePage = ({ setSelectedPage }: Props) => {
 
   return (
     <div>
-      <section id={SelectedPage.TRANG_CHU} className="p-6 pt-24">
+      <section>
         <Carousel autoplay infinite={true}>
           {imageSlideList.map((imageItem: string, index: number) => (
             <div key={index}>
@@ -46,7 +43,7 @@ const HomePage = ({ setSelectedPage }: Props) => {
         <div className="flex flex-col items-center py-4">
           <Row gutter={16} justify="center" align="middle">
             {imagesToShow.map((imageBrand: string, index: number) => (
-              <Col span={4} key={index} className="flex justify-center">
+              <Col span={3} key={index} className="flex justify-center">
                 <img
                   src={imageBrand}
                   alt={`brand-highlight-${index}`}
@@ -57,11 +54,9 @@ const HomePage = ({ setSelectedPage }: Props) => {
             <Button
               type="link"
               onClick={() => setShowAll(!showAll)}
-              className="mt-4 pr-6 font-sans font-bold text-pink-500"
+              className="px-6 py-2 text-base font-bold text-white"
             >
-              <ActionButton setSelectedPage={setSelectedPage}>
-                Xem Thêm...
-              </ActionButton>
+              <ActionButton parentId="more">Xem Thêm...</ActionButton>
             </Button>
           </Row>
         </div>
@@ -69,6 +64,14 @@ const HomePage = ({ setSelectedPage }: Props) => {
 
       <section className="bg-red-300">
         <Items />
+      </section>
+
+      <section className="mt-8 bg-white">
+        <CategoriesOfInterest />
+      </section>
+
+      <section>
+        <BlogPage />
       </section>
     </div>
   );

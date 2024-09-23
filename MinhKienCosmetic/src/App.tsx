@@ -1,17 +1,19 @@
 import Navbar from '@/components/navbar';
 import { useEffect, useState } from 'react';
-import { SelectedPage } from '@/Shared/types';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Homepage from './scenes/homepage/Homepage';
-import MakeupPage from './scenes/MakeUpPage/MakeupPage';
-import SkincarePage from './scenes/skincarePage/skincarePage';
+import Homepage from './scenes/Homepage/Homepage';
 import BlogPage from './scenes/BlogPage/BlogPage';
 import ProductDetail from './components/ProductDetail/ProductDetail';
+import Footer from './components/Footer/Footer';
+import Cart from './components/Cart/Cart';
+import LoginPage from './components/Loginout/Login';
+import RegisterPage from './components/Loginout/Register';
+import CategoryPage from './scenes/CategoryPage/CategoryPage';
+import CustomerInfo from './components/Customer/CustomerInfor';
+// import CartDPage from './components/Cart/CartDetail';
+// import CheckoutPage from './components/Cart/checkpage';
 
 function App() {
-  const [selectedPage, setSelectedPage] = useState<SelectedPage>(
-    SelectedPage.TRANG_CHU
-  );
   const [isTopOfPage, setIsTopOfPage] = useState(false);
 
   useEffect(() => {
@@ -24,41 +26,29 @@ function App() {
   }, []);
 
   return (
-    <div className="app bg-pink-20">
+    <div className="flex min-h-screen flex-col">
       <Router>
-        <header>
-          <Navbar
-            isTopOfPage={isTopOfPage}
-            selectedPage={selectedPage}
-            setSelectedPage={setSelectedPage}
-          />
+        <header className="fixed top-0 z-10 w-full">
+          <Navbar isTopOfPage={isTopOfPage} />
         </header>
-
-        <main>
+        <main className="mt-[195px] flex-grow">
           <Routes>
-            <Route
-              path={`/`}
-              element={<Homepage setSelectedPage={setSelectedPage} />}
-            />
-            <Route
-              path={`/${SelectedPage.TRANG_CHU}`}
-              element={<Homepage setSelectedPage={setSelectedPage} />}
-            />
-            <Route
-              path={`/${SelectedPage.TRANG_DIEM}`}
-              element={<MakeupPage />}
-            />
-            <Route
-              path={`/${SelectedPage.CHAM_SOC_DA}`}
-              element={<SkincarePage />}
-            />
-            <Route
-              path={`/${SelectedPage.BLOG_LAM_DEP}`}
-              element={<BlogPage />}
-            />
-            <Route path={`/ProductDetail`} element={<ProductDetail />} />
+            <Route path={`/`} element={<Homepage />} />
+            <Route path={`/category/:id`} element={<CategoryPage />} />
+            <Route path={`/Blog`} element={<BlogPage />} />
+            <Route path={`/ProductDetail/:id`} element={<ProductDetail />} />
+            <Route path={`/Cart`} element={<Cart />} />
+
+            <Route path={`/ThanhToan`} element={<CheckoutPage />} />
+            <Route path={`/CartD`} element={<CartDPage />} />
+            <Route path={`/Login`} element={<LoginPage />} />
+            <Route path={`/register`} element={<RegisterPage />} />
+            <Route path={`/CustomerInfo`} element={<CustomerInfo />} />
           </Routes>
         </main>
+        <footer className="mt-4 drop-shadow">
+          <Footer />
+        </footer>
       </Router>
     </div>
   );

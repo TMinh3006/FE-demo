@@ -1,46 +1,47 @@
 import { ChangeEvent, KeyboardEvent, useEffect, useState } from 'react';
-import axios from 'axios';
 import { Input } from 'antd';
 import type { GetProps } from 'antd';
 import ProductList from '@/components/ProductList/ProductList';
+import productApi from '@/Apis/Product/Product.Api';
+import { IProduct } from '@/Apis/Product/Product.Interface';
+import { useNavigate } from 'react-router-dom';
 
 type SearchProps = GetProps<typeof Input.Search>;
-type Product = {
-  id: number;
-  title: string;
-  image: string;
-};
 
 function SearchBar() {
   const { Search } = Input;
   const onSearch: SearchProps['onSearch'] = (value, _e, info) =>
     console.log(info?.source, value);
   const [query, setQuery] = useState('');
-  const [products, setProducts] = useState<Product[]>([]);
-  const [searchResults, setSearchResult] = useState<Product[]>([]);
+  const [products, setProducts] = useState<IProduct[]>([]);
+  const [searchResults, setSearchResult] = useState<IProduct[]>([]);
   const [selectedProductIndex, setSelectedProductIndex] = useState<number>(-1);
+  const navigate = useNavigate();
+
+  const getProducts = async () => {
+    try {
+      const response = await productApi.getProducts(0, 80);
+      setProducts(response);
+    } catch (error) {
+      console.error('Error: ', error);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      const { data } = await axios.get('https://fakestoreapi.com/products');
-      setProducts(data);
-    };
-    fetchData();
+    getProducts();
   }, []);
 
   function handleQueryChange(event: ChangeEvent<HTMLInputElement>) {
     setQuery(event.target.value);
     setSearchResult(
       products.filter((product) =>
-        product.title.toLowerCase().includes(event.target.value.toLowerCase())
+        product.name.toLowerCase().includes(event.target.value.toLowerCase())
       )
     );
     setSelectedProductIndex(-1);
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    console.log(event.key);
-
     if (event.key === 'ArrowUp') {
       setSelectedProductIndex((prevIndex) =>
         prevIndex === -1 ? searchResults.length - 1 : prevIndex - 1
@@ -52,15 +53,16 @@ function SearchBar() {
     } else if (event.key === 'Enter') {
       if (selectedProductIndex !== -1) {
         const selectedProduct = searchResults[selectedProductIndex];
-        alert(`Bạn đã chọn ${selectedProduct.title}`);
+        navigate(`/product/${selectedProduct.id}`);
         setQuery('');
         setSelectedProductIndex(-1);
         setSearchResult([]);
       }
     }
   }
-  function handleProcductClick(product: Product) {
-    alert(`You selected ${product.title}`);
+
+  function handleProcductClick(product: IProduct) {
+    navigate(`/productDetail/${product.id}`);
     setQuery('');
     setSelectedProductIndex(-1);
     setSearchResult([]);
@@ -71,7 +73,11 @@ function SearchBar() {
       <Search
         allowClear
         onSearch={onSearch}
-        style={{ width: 200, borderRadius: 8 }}
+        style={{
+          width: 800,
+          padding: '10px',
+          fontSize: '16px',
+        }}
         onChange={handleQueryChange}
         onKeyDown={handleKeyDown}
         value={query}

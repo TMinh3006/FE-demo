@@ -1,22 +1,18 @@
 import { useEffect } from 'react';
+import { IProduct } from '@/Apis/Product/Product.Interface';
 
-type Product = {
-  id: number;
-  title: string;
-  image: string;
-};
 type ProductListsProps = {
   selectedProductIndex: number;
-  products: Product[];
-  handleProcductClick: (product: Product) => void;
+  products: IProduct[];
+  handleProcductClick: (product: IProduct) => void;
 };
 
-function ProductList({
+const ProductList = ({
   products,
   selectedProductIndex,
   handleProcductClick,
-}: ProductListsProps) {
-  function scrollActiveProductIntoView(index: number) {
+}: ProductListsProps) => {
+  const scrollActiveProductIntoView = (index: number) => {
     const activeProduct = document.getElementById(`product-${index}`);
     console.log(`scrollIntoView called for product-${index}`, activeProduct);
     if (activeProduct) {
@@ -28,7 +24,7 @@ function ProductList({
     } else {
       console.log(`Element with id product-${index} not found`);
     }
-  }
+  };
 
   useEffect(() => {
     if (selectedProductIndex !== -1) {
@@ -45,11 +41,13 @@ function ProductList({
           className={`${selectedProductIndex === index ? 'bg-gray-200' : ''} flex cursor-pointer items-center justify-between gap-8 px-4 py-2 hover:bg-gray-200`}
           onClick={() => handleProcductClick(product)}
         >
-          <p>{product.title}</p>
-          <img src={product.image} alt="" className="w-8" />
+          <img src={product.thumbnails} alt="" className="w-8" />
+          <p className="truncate-limit-custom2">{product.name}</p>
+
+          <p>{product.price.toLocaleString()}đ</p>
         </div>
       ))}
     </div>
   );
-}
+};
 export default ProductList;

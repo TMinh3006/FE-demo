@@ -5,7 +5,12 @@
 @tailwind utilities;
 
 html,
-body,
+.body {
+  background-color: #f9e1e0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 20px;
+}
+
 #root,
 .app {
   height: 100%;
@@ -24,8 +29,55 @@ body,
   background: #f25ea3;
   border-radius: 10px;
 }
+
 .resultProductContainer {
-  max-height: 24rem; /* 96 is usually 24rem */
-  overflow-y: auto; /* Ensure it is set to auto to enable scrolling */
-  border: 1px solid #ccc; /* Optional: To visualize the container */
+  position: absolute;
+  top: 100px;
+  right: 50;
+  width: 30%;
+  max-height: 24rem;
+  overflow-y: auto;
+  background-color: white;
+  z-index: 999;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Tạo bóng để làm nổi bật */
+}
+.truncate-limit-custom {
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.truncate-limit-custom2 {
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 1 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.blur-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.1); /* Lớp phủ mờ nhẹ */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.blur-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: inherit;
+  backdrop-filter: blur(1px); /* Làm mờ nhẹ nền */
+  z-index: -1;
 }

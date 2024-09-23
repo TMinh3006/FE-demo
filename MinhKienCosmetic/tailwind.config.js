@@ -8,8 +8,9 @@ export default {
         'pink-50': '#FEADB9',
         'pink-80': '#BC85A3',
         'purple-10': '#9799BA',
-        'blue-50': '#BC85A3',
+
         'yellow-20': '#FFD66D',
+        'purple-20': '#dca8f0',
       },
       backgroundImage: {
         'gradient-pinked': 'linear-gradient(90deg, #FDBCCF 0%, #F25EA3 100%)',

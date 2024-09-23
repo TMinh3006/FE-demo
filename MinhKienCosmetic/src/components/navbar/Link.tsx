@@ -1,22 +1,17 @@
-import { SelectedPage } from '@/Shared/types';
 import { Link as RouterLink } from 'react-router-dom';
 
 type Props = {
-  page: SelectedPage;
-  selectedPage: SelectedPage;
-  setSelectedPage: (value: SelectedPage) => void;
+  children: React.ReactNode;
+  page: string;
 };
 
-const Link = ({ page, selectedPage, setSelectedPage }: Props) => {
+const CustomLink = ({ children, page }: Props) => {
+  const path = `/${page.replace(/\s+/g, '_')}`;
   return (
-    <RouterLink
-      className={`${selectedPage === page ? 'text-pink-500' : ''} transition duration-500`}
-      to={`/${page}`}
-      onClick={() => setSelectedPage(page)}
-    >
-      {page.replace(/-/g, ' ').toUpperCase()}
+    <RouterLink className={'transition duration-500'} to={path}>
+      {children}
     </RouterLink>
   );
 };
 
-export default Link;
+export default CustomLink;
