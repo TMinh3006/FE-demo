@@ -15,6 +15,7 @@ const ProductDetail: React.FC = () => {
         <div>
           <Gallary images={images} />
         </div>
+
         <div>
           <Productinfo id={'kfj24'} title="Product title" price={25} />
         </div>
