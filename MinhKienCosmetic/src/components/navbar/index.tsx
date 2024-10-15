@@ -3,16 +3,16 @@ import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/solid';
 import Logo from '@/assets/logo1.png';
 import useMediaQuery from '@/hooks/useMediaQuery';
 import SearchBar from './SearchBar';
-import CategoryApi from '@/Apis/Categories/Category.Api';
+import CategoryApi from '@/Apis/Categories/Category.api';
 import { useNavigate } from 'react-router-dom';
-import { ICategory } from '@/Apis/Categories/Category.Interface';
-
+import { ICategory } from '@/Apis/Categories/Category.interface';
 import {
   ShoppingCartOutlined,
   UserOutlined,
   LogoutOutlined,
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
+import { Drawer, Menu } from 'antd';
 
 type Props = {
   isTopOfPage: boolean;
@@ -34,7 +34,6 @@ const Navbar = ({ isTopOfPage }: Props) => {
       try {
         const data = await CategoryApi.getCategories();
         if (Array.isArray(data) && data.length > 0) {
-          // Xử lý dữ liệu nếu là mảng và có dữ liệu
           const main = data.filter(
             (category: ICategory) => category.parent_id === 0
           );
@@ -68,6 +67,7 @@ const Navbar = ({ isTopOfPage }: Props) => {
 
     fetchCategories();
   }, []);
+
   const userFullName = localStorage.getItem('fullName');
 
   const handleLogout = () => {
@@ -75,10 +75,12 @@ const Navbar = ({ isTopOfPage }: Props) => {
 
     if (confirmLogout) {
       localStorage.removeItem('fullName');
+      localStorage.removeItem('id');
       localStorage.removeItem('accessToken');
       navigate('/');
     }
   };
+
   return (
     <nav
       className={`${navbarBackground} fixed top-0 z-30 w-full flex-col pt-6`}
@@ -97,7 +99,7 @@ const Navbar = ({ isTopOfPage }: Props) => {
               <ShoppingCartOutlined
                 style={{ fontSize: '35px', cursor: 'pointer' }}
               />
-              <span style={{ marginLeft: '8px', fontSize: '18px' }}>1</span>
+              <span style={{ marginLeft: '8px', fontSize: '18px' }}></span>
             </Link>
             {userFullName ? (
               <div className="flex items-center gap-4">
@@ -106,9 +108,8 @@ const Navbar = ({ isTopOfPage }: Props) => {
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-2 rounded-2xl bg-pink-400 px-4 py-2 hover:bg-red-500"
+                  className="flex items-center gap-2 rounded-2xl px-4 py-2 text-pink-400 hover:text-red-500"
                 >
-                  <LogoutOutlined />
                   Đăng xuất
                 </button>
               </div>
@@ -175,33 +176,46 @@ const Navbar = ({ isTopOfPage }: Props) => {
           </ul>
         </div>
       ) : (
-        <button
-          className="flex rounded-full bg-red-400 p-3"
-          onClick={() => setIsMenuToggled(!isMenuToggled)}
-        >
-          <div className="h-6 w-6" onClick={() => setOpen(!open)}>
-            {open ? <XMarkIcon /> : <Bars3Icon />}
-          </div>
-        </button>
-      )}
-      {/* Mobile Menu Modal */}
-      {!isAboveMediumScreens && isMenuToggled && (
-        <div className="absolute bottom-0 h-full w-[300px] bg-white py-2 pl-4">
-          {/* Menu Items */}
-          <div
-            className={
-              'flex cursor-pointer flex-col gap-10 px-3 py-7 text-left'
-            }
+        <>
+          <button
+            className="flex rounded-full bg-red-400 p-3"
+            onClick={() => setIsMenuToggled(!isMenuToggled)}
           >
-            <ul>
+            <div className="h-6 w-6">
+              {open ? <XMarkIcon /> : <Bars3Icon />}
+            </div>
+          </button>
+
+          <Drawer
+            title="Danh mục"
+            placement="left"
+            onClose={() => setIsMenuToggled(false)}
+            open={isMenuToggled}
+            width={300}
+          >
+            <Menu mode="inline" theme="light">
               {mainCategories.map((category) => (
-                <h1 className="py-5" key={category.id}>
-                  {category.name}
-                </h1>
+                <Menu.SubMenu key={category.id} title={category.name}>
+                  {subCategories
+                    .filter((sub) => sub.parent_id === category.id)
+                    .map((sub) => (
+                      <Menu.SubMenu key={sub.id} title={sub.name}>
+                        {subSubCategories
+                          .filter((subSub) => subSub.parent_id === sub.id)
+                          .map((subSub) => (
+                            <Menu.Item key={subSub.id}>
+                              <Link to={`/category/${subSub.id}`}>
+                                {subSub.name}
+                              </Link>
+                            </Menu.Item>
+                          ))}
+                      </Menu.SubMenu>
+                    ))}
+                </Menu.SubMenu>
               ))}
-            </ul>
-          </div>
-        </div>
+            </Menu>
+          </Drawer>
+        </>
       )}
     </nav>
   );

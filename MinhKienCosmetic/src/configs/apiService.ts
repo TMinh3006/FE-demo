@@ -15,6 +15,7 @@ export const apiService = axios.create({
 apiService.interceptors.request.use(
   (config) => {
     const accessToken = localStorage.getItem('accessToken');
+    console.log('Token:', accessToken);
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
@@ -46,6 +47,7 @@ apiService.interceptors.response.use(
     if (error.response.status === 401) {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('fullName');
+      localStorage.removeItem('id');
     }
     return Promise.reject(error);
   }

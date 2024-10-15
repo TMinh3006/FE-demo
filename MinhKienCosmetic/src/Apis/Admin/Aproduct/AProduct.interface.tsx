@@ -1,4 +1,15 @@
 export interface IProduct {
+  name: string;
+  price: number;
+  quantity: number;
+  thumbnails: string[];
+  ingredients: string[];
+  description: string;
+  userManual: string;
+  category_id: number;
+  brand_id: number;
+}
+export interface Product {
   createdAt: string;
   updatedAt: string;
   id: number;
@@ -18,15 +29,4 @@ export interface IProduct {
     id: number;
     name: string;
   };
-  brandName: string;
-}
-
-export interface AddToCartRequest {
-  price: number;
-  product_id: number;
-  quantity: number;
-}
-export interface IProductResponse {
-  products: IProduct[];
-  totalPages: number;
 }

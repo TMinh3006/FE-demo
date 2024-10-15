@@ -1,22 +1,29 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Row, Col, Pagination, Select, Spin, Checkbox } from 'antd';
-import { Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
+import {
+  Row,
+  Col,
+  Pagination,
+  Select,
+  Spin,
+  Checkbox,
+  notification,
+} from 'antd';
 import { Rate } from 'antd';
-import productApi from '@/Apis/Product/Product.api';
-import categoryApi from '@/Apis/Categories/Category.api';
-import { IProduct, IProductResponse } from '@/Apis/Product/Product.interface';
+
+import brandApi from '@/Apis/Brands/Brand.api';
+import { IProduct, IProductResponse } from '@/Apis/Brands/Brands.interface';
 
 const { Option } = Select;
 
-const CategoryPage: React.FC = () => {
+const BrandPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [products, setProducts] = useState<IProduct[]>();
+  const [products, setProducts] = useState<IProduct[]>([]);
   const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(0); // Thay đổi về giá trị ban đầu của page
   const [limit, setLimit] = useState(16);
   const [totalProducts, setTotalProducts] = useState(0);
-  const [categoryName, setCategoryName] = useState<string>('');
+  const [brandName, setBrandName] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('Giá');
   const [priceRange, setPriceRange] = useState<[number, number] | undefined>(
     undefined
@@ -28,20 +35,18 @@ const CategoryPage: React.FC = () => {
   const [selectedPriceRange, setSelectedPriceRange] = useState<string[]>([]);
   const [allProducts, setAllProducts] = useState<IProduct[]>([]);
 
-  const fetchProductsByCategoryId = async (categoryId: string) => {
+  const fetchProductsByBrandId = async (brandId: string) => {
     try {
       setLoading(true);
-      const response: IProductResponse = await productApi.getCategoryId(
-        categoryId,
-        page + 1,
+      const response: IProductResponse = await brandApi.getBrandById(
+        brandId,
+        page - 2, // Truyền page + 1 cho API
         limit
       );
-      console.log('danh sach san pham:', response);
       setProducts(response.products);
       setAllProducts(response.products);
       setTotalProducts(response.totalPages * limit);
 
-      // Trích xuất thương hiệu từ sản phẩm
       const uniqueBrands = Array.from(
         new Set(response.products.map((product) => product.brandName))
       );
@@ -50,46 +55,48 @@ const CategoryPage: React.FC = () => {
         value: brand,
       }));
       setBrandOptions(brandOptions);
-      setLoading(false);
     } catch (error) {
       console.error('Lỗi khi lấy sản phẩm:', error);
       setProducts([]);
       setAllProducts([]);
+      notification.error({
+        message: 'Lỗi',
+        description: 'Không thể tải sản phẩm. Vui lòng thử lại.',
+      });
+    } finally {
       setLoading(false);
     }
   };
-  const fetchCategoryName = async (categoryId: string) => {
+
+  const fetchBrandName = async (brandId: string) => {
     try {
-      const response = await categoryApi.getCategoryById(categoryId);
-      setCategoryName(response.name || 'Danh mục');
+      const response = await brandApi.getBrandById(brandId, page - 2, limit);
+      setBrandName(response.products[0]?.brandName || 'Thương hiệu');
     } catch (error) {
-      console.error('Error fetching category name:', error);
-      setCategoryName('Danh mục');
+      console.error('Error fetching brand name:', error);
+      setBrandName('Thương hiệu');
     }
   };
 
   useEffect(() => {
     if (id) {
-      fetchProductsByCategoryId(id);
-      fetchCategoryName(id);
+      fetchProductsByBrandId(id);
+      fetchBrandName(id);
     }
   }, [id, page, limit]);
 
   useEffect(() => {
     if (allProducts.length > 0) {
-      // Lọc sản phẩm theo khoảng giá
       const filteredByPrice = allProducts.filter((product) => {
         const productPrice = product.price;
         const [minPrice, maxPrice] = priceRange || [0, Infinity];
         return productPrice >= minPrice && productPrice <= maxPrice;
       });
 
-      // Lọc sản phẩm theo thương hiệu
       const filteredByBrand = filteredByPrice.filter((product) => {
         return brands.length === 0 || brands.includes(product.brandName);
       });
 
-      // Sắp xếp sản phẩm
       const sortedProducts = [...filteredByBrand].sort((a, b) => {
         if (sortBy === 'price_asc') {
           return a.price - b.price;
@@ -103,18 +110,15 @@ const CategoryPage: React.FC = () => {
     }
   }, [priceRange, brands, allProducts, sortBy]);
 
-  // Xử lý thay đổi trang và số lượng sản phẩm mỗi trang
   const handlePageChange = (page: number, pageSize: number) => {
-    setPage(page);
+    setPage(page); // Chuyển đổi page từ 1 sang 0
     setLimit(pageSize);
   };
 
-  // Xử lý thay đổi sắp xếp
   const handleSortChange = (value: string) => {
     setSortBy(value);
   };
 
-  // Xử lý thay đổi khoảng giá
   const handlePriceRangeChange = (checkedValues: string[]) => {
     let minPrice: number | undefined;
     let maxPrice: number | undefined;
@@ -144,12 +148,16 @@ const CategoryPage: React.FC = () => {
   };
 
   if (loading) {
-    return <Spin />;
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Spin size="large" />
+      </div>
+    );
   }
 
   return (
     <div className="m-12 flex flex-col">
-      <h1 className="-mb-1 text-2xl font-bold">{categoryName}</h1>
+      <h1 className="-mb-1 text-2xl font-bold">{brandName}</h1>
       <div className="flex items-end justify-end">
         <h3 className="mx-4 my-3 text-lg font-semibold">Sắp xếp theo</h3>
         <Select
@@ -163,7 +171,6 @@ const CategoryPage: React.FC = () => {
       </div>
 
       <div className="mt-1 flex flex-row">
-        {/* Bộ lọc sản phẩm nằm bên trái */}
         <div className="h-1/3 w-56 rounded-lg bg-white p-4 shadow-md">
           <h3 className="mb-3 text-lg font-semibold">Khoảng giá</h3>
           <Checkbox.Group
@@ -186,7 +193,6 @@ const CategoryPage: React.FC = () => {
           />
         </div>
 
-        {/* Danh sách sản phẩm nằm bên phải */}
         <div className="w-full pl-12">
           <Row className="flex flex-wrap">
             {Array.isArray(products) && products.length > 0 ? (
@@ -226,7 +232,6 @@ const CategoryPage: React.FC = () => {
             )}
           </Row>
 
-          {/* Phân trang */}
           <div className="mt-6 flex justify-center">
             <Pagination
               current={page}
@@ -242,4 +247,4 @@ const CategoryPage: React.FC = () => {
   );
 };
 
-export default CategoryPage;
+export default BrandPage;

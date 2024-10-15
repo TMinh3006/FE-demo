@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Col, Divider, Row } from 'antd';
 import { StarOutlined } from '@ant-design/icons';
-import { IProduct } from '@/Apis/Product/Product.Interface';
-import productApi from '@/Apis/Product/Product.Api';
+import { IProduct } from '@/Apis/Product/Product.interface';
+import productApi from '@/Apis/Product/Product.api';
 
 const Items: React.FC = () => {
   const [Products, setProducts] = useState<IProduct[]>([]);

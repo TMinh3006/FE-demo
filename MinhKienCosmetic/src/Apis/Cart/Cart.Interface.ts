@@ -67,3 +67,17 @@ export interface ICart {
   user: IUser;
   cartItems: ICartItem[];
 }
+
+export interface IDeleteCartResponse {
+  message: string;
+  status: string;
+}
+export interface IDecreaseQuantityResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface AddToCartRequest {
+  product_id: number;
+  quantity: number;
+}

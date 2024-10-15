@@ -1,20 +1,25 @@
 import React, { useState } from 'react';
-import { IProduct } from '@/Apis/Product/Product.Interface';
-import { AddToCartRequest } from '@/Apis/Product/Product.Interface';
-import cartService from '@/Apis/Product/Product.Api';
+import { IProduct } from '@/Apis/Product/Product.interface';
+import { AddToCartRequest } from '@/Apis/Product/Product.interface';
+import cartService from '@/Apis/Product/Product.api';
 
 const Productinfo: React.FC<IProduct> = ({ id, name, price, brand }) => {
   const [quantity, setQuantity] = useState(1);
   const [message, setMessage] = useState('');
 
   const handleAddToCart = async () => {
-    // const userId = localStorage.getItem('id');
-    // if (userId === null) return;
+    const userId = localStorage.getItem('id');
+    const accessToken = localStorage.getItem('accessToken');
 
-    const data: AddToCartRequest = { product_id: id, quantity };
+    if (!userId || !accessToken) {
+      console.error('User ID hoặc accessToken không tồn tại.');
+      return;
+    }
+
+    const data: AddToCartRequest = { price, product_id: id, quantity };
     console.log('Data to send:', data);
     try {
-      await cartService.addToCart(data);
+      await cartService.addToCart(userId, data);
       console.log(cartService);
       setMessage('Đã thêm vào giỏ hàng!');
       console.log('Đã thêm vào giỏ hàng!');

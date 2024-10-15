@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import Gallary from './Gallary';
 import { Tabs } from 'antd';
 import Productinfo from './Productinfo';
-import productApi from '@/Apis/Product/Product.Api';
-import { IProduct } from '@/Apis/Product/Product.Interface';
+import productApi from '@/Apis/Product/Product.api';
+import { IProduct } from '@/Apis/Product/Product.interface';
 import { useParams } from 'react-router-dom';
 
 const { TabPane } = Tabs;

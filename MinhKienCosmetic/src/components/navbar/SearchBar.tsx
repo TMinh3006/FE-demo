@@ -2,8 +2,8 @@ import { ChangeEvent, KeyboardEvent, useEffect, useState } from 'react';
 import { Input } from 'antd';
 import type { GetProps } from 'antd';
 import ProductList from '@/components/ProductList/ProductList';
-import productApi from '@/Apis/Product/Product.Api';
-import { IProduct } from '@/Apis/Product/Product.Interface';
+import productApi from '@/Apis/Product/Product.api';
+import { IProduct } from '@/Apis/Product/Product.interface';
 import { useNavigate } from 'react-router-dom';
 
 type SearchProps = GetProps<typeof Input.Search>;
@@ -69,12 +69,12 @@ function SearchBar() {
   }
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col font-sans">
+    <div className="mx-4 w-full max-w-3xl">
       <Search
         allowClear
         onSearch={onSearch}
         style={{
-          width: 800,
+          width: '100%',
           padding: '10px',
           fontSize: '16px',
         }}

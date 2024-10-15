@@ -1,17 +1,16 @@
 import { apiService } from '@/configs/apiService';
-import { IOrder } from './Order.Interface';
+import { IOrder } from './Order.interface';
 
 export default {
-  getOrderById(orderId: string): Promise<IOrder[]> {
+  createOrder(orderData: IOrder): Promise<IOrder> {
     return apiService
-      .get(`/api/v1/order_details/order/${orderId}`)
+      .post('/api/v1/orders', orderData)
       .then((response) => {
-        console.log('Order response:', response);
-
-        return response.data.product;
+        console.log('Order created successfully:', response);
+        return response.data;
       })
       .catch((error) => {
-        console.error('Error fetching order by ID:', error);
+        console.error('Error creating order:', error);
         throw error;
       });
   },

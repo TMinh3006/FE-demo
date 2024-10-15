@@ -12,7 +12,12 @@ const RegisterPage = () => {
     try {
       setIsLoading(true);
 
-      await authApi.userRegister(values);
+      const userData = {
+        ...values,
+        role_id: 2, // Vai trò "user"
+      };
+
+      await authApi.userRegister(userData);
 
       notify.success({
         message: 'Đăng ký thành công',
@@ -21,7 +26,6 @@ const RegisterPage = () => {
 
       window.location.href = '/login';
     } catch (error) {
-      // Kiểm tra loại lỗi và cấu trúc của nó
       const err = error as IErrorResponse;
       const errorMessage =
         err?.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại';
@@ -45,8 +49,10 @@ const RegisterPage = () => {
           {notifyContext}
           <Form onFinish={handleRegister}>
             <Form.Item
-              name="fullname"
               label="Họ và Tên"
+              labelCol={{ span: 9 }}
+              wrapperCol={{ span: 18 }}
+              name="fullname"
               rules={[
                 {
                   required: true,
@@ -58,8 +64,10 @@ const RegisterPage = () => {
             </Form.Item>
 
             <Form.Item
-              name="phone_number"
               label="Số Điện Thoại"
+              labelCol={{ span: 9 }}
+              wrapperCol={{ span: 18 }}
+              name="phone_number"
               rules={[
                 {
                   required: true,
@@ -67,12 +75,14 @@ const RegisterPage = () => {
                 },
               ]}
             >
-              <Input className="h-10 rounded-lg border border-gray-300 px-10 focus:outline-none focus:ring-2 focus:ring-pink-500" />
+              <Input className="h-10 rounded-lg border border-gray-300 px-4 focus:outline-none focus:ring-2 focus:ring-pink-500" />
             </Form.Item>
 
             <Form.Item
-              name="date_of_birth"
               label="Ngày Sinh"
+              labelCol={{ span: 9 }}
+              wrapperCol={{ span: 18 }}
+              name="date_of_birth"
               rules={[
                 {
                   required: true,
@@ -87,8 +97,10 @@ const RegisterPage = () => {
             </Form.Item>
 
             <Form.Item
-              name="password"
               label="Mật khẩu"
+              labelCol={{ span: 9 }}
+              wrapperCol={{ span: 18 }}
+              name="password"
               rules={[
                 {
                   required: true,
@@ -100,8 +112,10 @@ const RegisterPage = () => {
             </Form.Item>
 
             <Form.Item
-              name="retype_password"
               label="Nhập lại Mật khẩu"
+              labelCol={{ span: 9 }}
+              wrapperCol={{ span: 18 }}
+              name="retype_password"
               rules={[
                 {
                   required: true,

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { IProduct } from '@/Apis/Product/Product.Interface';
+import { IProduct } from '@/Apis/Product/Product.interface';
 
 type ProductListsProps = {
   selectedProductIndex: number;

@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import EmptyCartImage from '@/assets/cart0.png';
-import CartApi from '@/Apis/Cart/Cart.Api';
-import { ICartItem } from '@/Apis/Cart/Cart.Interface';
+import CartApi from '@/Apis/Cart/Cart.api';
+import { AddToCartRequest, ICartItem } from '@/Apis/Cart/Cart.interface';
+import { DeleteOutlined } from '@ant-design/icons';
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState<ICartItem[]>([]);
-  const [totalPrice, setTotalPrice] = useState<number>(0);
 
   const getCart = async () => {
     try {
       const id = localStorage.getItem('id');
       if (id === null) return;
+
       const response = await CartApi.getCartById(id);
       console.log(response);
       setCartItems(response);
@@ -23,34 +24,49 @@ const Cart = () => {
     getCart();
   }, []);
 
-  const decreaseQuantity = async (productId: number) => {
-    const userId = localStorage.getItem('id');
-    if (!userId) {
-      console.error('Người dùng không xác định.');
-      return;
-    }
-
+  const decreaseQuantity = async (
+    productId: number,
+    currentQuantity: number
+  ) => {
     try {
+      const userId = localStorage.getItem('id');
+      if (!userId || currentQuantity <= 1) return;
+
       const amountToDecrease = 1;
       await CartApi.decreaseQuantity(userId, productId, amountToDecrease);
       console.log(`Số lượng của sản phẩm ID ${productId} đã được giảm.`);
+      setCartItems((prevItems) =>
+        prevItems.map((item) =>
+          item.id === productId
+            ? { ...item, quantity: item.quantity - amountToDecrease }
+            : item
+        )
+      );
       getCart();
     } catch (error) {
       console.error('Không thể giảm số lượng sản phẩm:', error);
     }
   };
   const increaseQuantity = async (productId: number) => {
-    const userId = localStorage.getItem('id');
-    if (!userId) {
-      console.error('Người dùng không xác định.');
-      return;
-    }
-
     try {
-      const quantityToAdd = 1; // Số lượng muốn tăng
-      await CartApi.increaseQuantity(userId, productId, quantityToAdd);
+      const userId = localStorage.getItem('id');
+      if (userId === null) return;
+
+      const quantityToAdd = 1;
+      const data: AddToCartRequest = {
+        product_id: productId,
+        quantity: quantityToAdd,
+      };
+      await CartApi.increaseQuantity(userId, data);
       console.log(`Số lượng của sản phẩm ID ${productId} đã được tăng.`);
 
+      setCartItems((prevItems) =>
+        prevItems.map((item) =>
+          item.id === productId
+            ? { ...item, quantity: item.quantity + quantityToAdd }
+            : item
+        )
+      );
       getCart();
     } catch (error) {
       console.error('Không thể tăng số lượng sản phẩm:', error);
@@ -58,20 +74,25 @@ const Cart = () => {
   };
 
   const handleRemoveItem = async (cartItemId: number) => {
-    const userId = localStorage.getItem('id');
-    if (!userId) {
-      console.error('Người dùng không xác định.');
-      return;
-    }
     try {
+      const userId = localStorage.getItem('id');
+      if (userId === null) return;
+
+      // Xác nhận trước khi xóa sản phẩm
+      const confirmDelete = window.confirm(
+        'Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng không?'
+      );
+      if (!confirmDelete) return;
+
       await CartApi.removeCart(userId, cartItemId);
       console.log(`Mục giỏ hàng với ID ${cartItemId} đã được xóa.`);
+      getCart();
     } catch (error) {
       console.error('Không thể xóa mục giỏ hàng:', error);
     }
   };
-  const totalPrice = order.order_details.reduce(
-    (total, item) => total + item.totalMoney,
+  const totalPrice = cartItems.reduce(
+    (total, item) => total + item.quantity * item.price,
     0
   );
 
@@ -96,41 +117,51 @@ const Cart = () => {
                       checked={item.isSelected}
                       onChange={() => toggleSelectItem(item.id)}
                     />*/}
-                    <img className="h-24 w-24 object-cover" />
-                    {item.product.thumbnails}
+                    <img
+                      className="h-24 w-24 object-cover"
+                      src={item.product.thumbnails[0]}
+                    />
+
                     <div className="ml-4">
                       <h2 className="text-lg font-semibold">
                         {item.product.name}
                       </h2>
-                      <p className="text-gray-500">Đơn giá: {item.price}₫</p>
+                      <p className="text-gray-500">
+                        Đơn giá: {item.price.toLocaleString()}đ
+                      </p>
                       {item.price === 0 && (
                         <span className="mt-2 inline-block rounded bg-red-100 px-2 py-1 text-sm text-red-500">
                           Quà tặng miễn phí
                         </span>
                       )}
-                      <div className="mt-2 flex items-center">
-                        <button
-                          className="bg-gray-200 px-3 py-1 text-sm"
-                          onClick={() => decreaseQuantity(item.id)}
-                        >
-                          -
-                        </button>
-                        <span className="mx-2 text-lg">{item.quantity}</span>
-                        <button
-                          className="bg-gray-200 px-3 py-1 text-sm"
-                          onClick={() => increaseQuantity(item.id)}
-                        >
-                          +
-                        </button>
-                      </div>
                     </div>
                   </div>
-                  <button
-                    className="text-red-500"
-                    onClick={() => handleRemoveItem(item.id)}
-                  >
-                    Xóa
-                  </button>
+
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center">
+                      <button
+                        className="bg-gray-200 px-3 py-1 text-sm"
+                        onClick={() =>
+                          decreaseQuantity(item.product.id, item.quantity)
+                        }
+                      >
+                        -
+                      </button>
+                      <span className="mx-2 text-lg">{item.quantity}</span>
+                      <button
+                        className="bg-gray-200 px-3 py-1 text-sm"
+                        onClick={() => increaseQuantity(item.product.id)}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <button
+                      className="text-red-500"
+                      onClick={() => handleRemoveItem(item.id)}
+                    >
+                      <DeleteOutlined />
+                    </button>
+                  </div>
                 </div>
               ))
             ) : (
@@ -170,9 +201,11 @@ const Cart = () => {
               </span>
             </div>
             <div className="mt-4 flex justify-center">
-              <button className="rounded-3xl bg-orange-500 px-20 py-2 text-white hover:bg-orange-400">
-                ĐẶT HÀNG
-              </button>
+              <Link to="/Checkout">
+                <button className="rounded-3xl bg-orange-500 px-20 py-2 text-white hover:bg-orange-400">
+                  ĐẶT HÀNG
+                </button>
+              </Link>
             </div>
           </div>
         </div>

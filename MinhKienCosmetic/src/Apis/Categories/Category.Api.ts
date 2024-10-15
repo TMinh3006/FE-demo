@@ -1,4 +1,4 @@
-import { ICategory } from './Category.Interface';
+import { ICategory } from './Category.interface';
 import { apiService } from '@/configs/apiService';
 
 export default {

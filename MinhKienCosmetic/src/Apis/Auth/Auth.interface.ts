@@ -5,9 +5,9 @@ export interface IRegister {
   phone_number: string;
   retype_password: string;
   date_of_birth: string;
-  facebook_account_id: 0;
-  google_account_id: 0;
-  role_id: 0;
+  facebook_account_id: number;
+  google_account_id: number;
+  role_id: number;
 }
 export interface IErrorResponse {
   response?: {
@@ -31,6 +31,7 @@ export interface User {
   updatedAt: string;
   id: number;
   fullName: string;
+  email: string;
   phoneNumber: string;
   address: string;
   password: string;

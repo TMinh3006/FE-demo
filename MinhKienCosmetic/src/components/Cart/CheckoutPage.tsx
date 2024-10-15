@@ -1,100 +1,141 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Form,
   Input,
-  Radio,
   Select,
   Button,
   Card,
-  Divider,
   Row,
   Col,
   List,
+  message,
+  DatePicker,
 } from 'antd';
-import { useParams } from 'react-router-dom';
-import orderApi from '@/Apis/Order/Order.Api';
-import { OrderProduct, IOrder, Product } from '@/Apis/Order/Order.Interface';
+import orderApi from '@/Apis/Order/Order.api';
+import { IOrder } from '@/Apis/Order/Order.interface';
 import Title from 'antd/es/typography/Title';
+import cartApi from '@/Apis/Cart/Cart.api';
+import { ICartItem } from '@/Apis/Cart/Cart.interface';
+import { Link } from 'react-router-dom';
+import moment from 'moment';
 
 const { Option } = Select;
 
 const CheckoutPage = () => {
-  const { id } = useParams<string>();
   const [form] = Form.useForm();
-  const [cartItems, setCartItems] = useState<Product[]>([]);
-  const [orderData, setOrderData] = useState<IOrder | null>(null);
+  const [cartItems, setCartItems] = useState<ICartItem[]>([]);
 
-  const getOrderDetails = async () => {
-    if (id) {
+  useEffect(() => {
+    const fetchCartItems = async () => {
       try {
-        const response: OrderProduct = await orderApi.getOrderById(id);
-        if (response.length > 0) {
-          setCartItems(response.map((orderDetail) => orderDetail.product));
-          setOrderData(response[0].order); // Lấy thông tin đơn hàng từ phần tử đầu tiên
-        } else {
-          setCartItems([]);
-          setOrderData(null);
+        const id = localStorage.getItem('id');
+        if (id === null) {
+          message.error('Vui lòng đăng nhập để tiếp tục.');
+          return;
         }
+
+        const response = await cartApi.getCartById(id);
+        setCartItems(response);
       } catch (error) {
-        console.error('Error: ', error);
+        console.error('Error fetching cart items:', error);
+        message.error('Không thể tải giỏ hàng.');
       }
+    };
+
+    fetchCartItems();
+  }, []);
+
+  const handleSubmit = async (values: IOrder) => {
+    const id = localStorage.getItem('id');
+    if (id === null) {
+      message.error('Vui lòng đăng nhập để tiếp tục.');
+      return;
+    }
+
+    try {
+      const orderData: IOrder = {
+        ...values,
+        cart_items: cartItems.map((item) => ({
+          product_id: item.product.id,
+          quantity: item.quantity,
+          price: item.price, // Bao gồm price ở đây
+        })),
+        total_money: totalPrice, // Sử dụng tổng tiền đã tính
+        user_id: parseInt(id),
+        shipping_date: moment(values.shipping_date).format('YYYY-MM-DD'),
+      };
+
+      await orderApi.createOrder(orderData);
+      await cartApi.clearCart(id);
+      message.success('Đặt hàng thành công!');
+    } catch (error) {
+      console.error('Error submitting order:', error);
+      message.error('Đặt hàng thất bại, vui lòng thử lại.');
     }
   };
 
-  useEffect(() => {
-    getOrderDetails();
-  }, [id]);
-
-  const onFinish = (values: any) => {
-    console.log('Form values:', values);
-  };
-
-  const totalPrice = order.order_details.reduce(
-    (total, item) => total + item.totalMoney,
+  const totalPrice = cartItems.reduce(
+    (total, item) => total + item.quantity * item.price,
     0
   );
 
-  const handleSubmit = () => {
-    console.log('Submitting order');
-  };
-
   return (
-    <div className="min-h-screen bg-gray-100 py-10">
+    <div className="min-h-screen py-10">
       <div className="container mx-auto max-w-6xl">
-        <Title level={2} style={{ fontSize: '36px' }}>
+        <Title level={2} style={{ fontSize: '36px', fontWeight: 'bold' }}>
           Thanh Toán
         </Title>
-        <Row gutter={16}>
+        <Row gutter={20}>
           <Col span={12}>
-            <Form layout="vertical" onFinish={handleSubmit}>
+            <Form layout="vertical" onFinish={handleSubmit} form={form}>
               <Form.Item label="Họ và tên" name="fullname">
-                <Input />
+                <Input style={{ fontSize: '16px' }} />
               </Form.Item>
 
               <Form.Item label="Email" name="email">
-                <Input />
+                <Input style={{ fontSize: '16px' }} />
               </Form.Item>
 
               <Form.Item label="Số điện thoại" name="phone_number">
-                <Input />
+                <Input style={{ fontSize: '16px' }} />
               </Form.Item>
 
               <Form.Item label="Địa chỉ giao hàng" name="shipping_address">
-                <Input />
+                <Input style={{ fontSize: '16px' }} />
+              </Form.Item>
+
+              <Form.Item label="Địa chỉ nhận hàng" name="address">
+                <Input style={{ fontSize: '16px' }} />
               </Form.Item>
 
               <Form.Item label="Phương thức giao hàng" name="shipping_method">
-                <Select placeholder="Chọn phương thức giao hàng">
+                <Select
+                  placeholder="Chọn phương thức giao hàng"
+                  style={{ fontSize: '16px' }}
+                >
                   <Option value="express">Giao hàng Express</Option>
                   <Option value="fast">Giao hàng nhanh</Option>
                 </Select>
               </Form.Item>
 
               <Form.Item label="Phương thức thanh toán" name="payment_method">
-                <Select placeholder="Chọn phương thức thanh toán">
+                <Select
+                  placeholder="Chọn phương thức thanh toán"
+                  style={{ fontSize: '16px' }}
+                >
                   <Option value="cod">COD</Option>
                   <Option value="other">Phương thức khác</Option>
                 </Select>
+              </Form.Item>
+
+              <Form.Item
+                label="Ngày giao hàng"
+                name="shipping_date"
+                rules={[
+                  { required: true, message: 'Vui lòng chọn ngày sinh!' },
+                ]}
+              >
+                <DatePicker format="YYYY-MM-DD" />
               </Form.Item>
             </Form>
           </Col>
@@ -103,46 +144,65 @@ const CheckoutPage = () => {
             <Card title="Đơn Hàng Của Bạn" className="mt-4 rounded shadow">
               <List
                 itemLayout="horizontal"
-                dataSource={order.order_details}
+                dataSource={cartItems}
                 renderItem={(item) => (
                   <List.Item>
+                    <img
+                      className="h-16 w-16 object-cover"
+                      src={item.product.thumbnails[0]}
+                    />
                     <List.Item.Meta
                       title={
-                        <span style={{ fontSize: '18px' }}>
+                        <span
+                          style={{
+                            fontSize: '20px',
+
+                            fontWeight: 'bold',
+                          }}
+                        >
                           {item.product.name}
                         </span>
                       }
-                      description={`Đơn giá: ${item.price.toLocaleString()}₫ - Số lượng: ${item.numberOfProducts}`}
+                      description={`Đơn giá: ${item.price.toLocaleString()}₫ - Số lượng: ${item.quantity}`}
                     />
                   </List.Item>
                 )}
               />
-              <div className="mt-4 flex justify-between">
+              <div
+                className="mt-4 flex justify-between"
+                style={{ fontSize: '18px' }}
+              >
                 <span>Tổng sản phẩm đã chọn</span>
-                <span>{order.order_details.length}</span>
+                <span>{cartItems.length}</span>
               </div>
-              <div className="mt-2 flex justify-between">
+              <div
+                className="mt-2 flex justify-between"
+                style={{ fontSize: '18px' }}
+              >
                 <span>Tạm tính</span>
                 <span>{totalPrice.toLocaleString()}₫</span>
               </div>
-              <div className="mt-4 flex justify-between font-bold">
+              <div
+                className="mt-4 flex justify-between font-bold"
+                style={{ fontSize: '20px' }}
+              >
                 <span>Tổng thanh toán</span>
                 <span className="text-red-500">
                   {totalPrice.toLocaleString()}₫
                 </span>
               </div>
-
-              {/* Nút Đặt hàng nằm giữa */}
             </Card>
             <Row justify="center" className="mt-4">
-              <Button
-                type="primary"
-                htmlType="submit"
-                style={{ width: '200px' }}
-                onClick={handleSubmit}
-              >
-                Đặt hàng
-              </Button>
+              <Link to="/SuccessPage">
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  style={{ width: '200px', fontSize: '18px' }}
+                  onClick={() => form.submit()}
+                >
+                  Đặt hàng
+                </Button>
+              </Link>
             </Row>
           </Col>
         </Row>

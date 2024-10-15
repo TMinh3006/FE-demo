@@ -20,9 +20,13 @@ const LoginPage = () => {
       localStorage.setItem('fullName', response.user.fullName);
       localStorage.setItem('userName', response.user.username);
       localStorage.setItem('id', response.user.id.toString());
+      localStorage.setItem('role', response.user.role.id.toString());
 
-      // Điều hướng đến trang chính
-      window.location.href = '/';
+      if (response.user.role.id === 1) {
+        window.location.href = '/admin';
+      } else {
+        window.location.href = '/';
+      }
     } catch (error) {
       notify.error({
         message: 'Đăng nhập thất bại',
@@ -43,6 +47,8 @@ const LoginPage = () => {
             <Form.Item
               name="phone_number"
               label="Số Điện Thoại"
+              labelCol={{ span: 9 }}
+              wrapperCol={{ span: 18 }}
               rules={[
                 {
                   required: true,
@@ -50,11 +56,13 @@ const LoginPage = () => {
                 },
               ]}
             >
-              <Input className="h-10 rounded-lg border border-gray-300 px-10 focus:outline-none focus:ring-2 focus:ring-pink-500" />
+              <Input className="h-10 rounded-lg border border-gray-300 px-4 focus:outline-none focus:ring-2 focus:ring-pink-500" />
             </Form.Item>
             <Form.Item
               name="password"
               label="Mật khẩu"
+              labelCol={{ span: 9 }}
+              wrapperCol={{ span: 18 }}
               rules={[
                 {
                   required: true,

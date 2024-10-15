@@ -4,25 +4,40 @@ import KCN from '@/assets/KCN.jpg';
 import Serum from '@/assets/Serum.jpg';
 import ST from '@/assets/ST.jpg';
 import SRM from '@/assets/SRM.jpg';
-import DG from '@/assets/DG.jpg';
+import NHH from '@/assets/nhh.jpg';
 import NTT from '@/assets/NTT.jpg';
-import CLG from '@/assets/Collagen.png';
-import { Divider, Row, Col, Button } from 'antd';
+import MN from '@/assets/mn.jpg';
+import { Divider, Row, Col, Button, message } from 'antd';
 import ActionButton from '@/Shared/ActionButton';
+import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 const CategoriesOfInterest: React.FC = () => {
   const imageCategories = [
-    { src: Son, name: 'Son' },
-    { src: KCN, name: 'Kem Chống Nắng' },
-    { src: Serum, name: 'Serum' },
-    { src: ST, name: 'Sữa Tắm' },
-    { src: SRM, name: 'Sữa Rửa Mặt' },
-    { src: DG, name: 'Dầu Gội' },
-    { src: NTT, name: 'Nước Tẩy Trang' },
-    { src: CLG, name: 'Collagen' },
+    { src: Son, name: 'Son', categoryId: 55 },
+    { src: KCN, name: 'Kem Chống Nắng', categoryId: 9 },
+    { src: Serum, name: 'Serum', categoryId: 40 },
+    { src: ST, name: 'Sữa Tắm', categoryId: 64 },
+    { src: SRM, name: 'Sữa Rửa Mặt', categoryId: 35 },
+    { src: NHH, name: 'Nước hoa hồng', categoryId: 39 },
+    { src: NTT, name: 'Nước Tẩy Trang', categoryId: 7 },
+    { src: MN, name: 'Mặt nạ', categoryId: 42 },
   ];
-
   const [showAll, setShowAll] = useState(false);
+
+  const handleImageClick = async (categoryId: number) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:8080/api/v1/products/category/${categoryId}`
+      );
+      // Xử lý dữ liệu từ API
+      console.log('Dữ liệu sản phẩm:', response.data);
+      // Có thể thêm logic để hiển thị sản phẩm hoặc xử lý dữ liệu ở đây
+    } catch (error) {
+      console.error('Lỗi khi gọi API:', error);
+      message.error('Không thể tải sản phẩm cho danh mục này.');
+    }
+  };
 
   return (
     <div>
@@ -45,11 +60,16 @@ const CategoriesOfInterest: React.FC = () => {
         <Row gutter={40}>
           {imageCategories.map((item, index) => (
             <Col span={3} key={index} className="flex flex-col items-center">
-              <img
-                src={item.src}
-                alt={`categoriesOfIterest-${index}`}
-                className="h-[170px] w-[170px] rounded-md bg-pink-20 object-cover p-2"
-              />
+              <Link
+                to={`/category/${item.categoryId}`}
+                onClick={() => handleImageClick(item.categoryId)}
+              >
+                <img
+                  src={item.src}
+                  alt={`categoriesOfInterest-${index}`}
+                  className="h-[170px] w-[170px] rounded-md bg-pink-20 object-cover p-2"
+                />
+              </Link>
               <span className="mt-2 text-sm font-medium">{item.name}</span>
             </Col>
           ))}

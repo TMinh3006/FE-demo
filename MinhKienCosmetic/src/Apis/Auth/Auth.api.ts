@@ -2,13 +2,18 @@ import { apiService } from '@/configs/apiService';
 import { IRegister, ILoginForm, LoginResponse, User } from './Auth.interface';
 
 export default {
-  // Đăng ký không cần xác thực
   userRegister(data: IRegister): Promise<{ message: string }> {
-    return apiService.post('/api/v1/users/register', data).then((response) => {
-      console.log('API login:', response); // Log phản hồi từ API
-      localStorage.setItem('accessToken', response.data);
-      return response.data;
-    });
+    const userData = {
+      ...data,
+      role_id: 2,
+    };
+
+    return apiService
+      .post('/api/v1/users/register', userData)
+
+      .then((response) => {
+        return response.data;
+      });
   },
 
   userLogin(data: ILoginForm): Promise<LoginResponse> {
@@ -16,8 +21,6 @@ export default {
       .post('/api/v1/users/login', data)
 
       .then((response) => {
-        console.log('API login:', response); // Log phản hồi từ API
-        localStorage.setItem('accessToken', response.data);
         return response.data;
       });
   },
@@ -26,7 +29,6 @@ export default {
       .get(`/api/v1/users/details/${id}`)
 
       .then((response) => {
-        localStorage.setItem('accessToken', response.data);
         return response.data;
       });
   },

@@ -1,12 +1,23 @@
 import { apiService } from '@/configs/apiService';
-import { IBrands } from './Brands.Interface';
+import { IProductResponse } from './Brands.interface';
 
 export default {
-  getCategories(page: number, limit: number): Promise<IBrands[]> {
+  getBrandById(
+    brandId: string,
+    page: number,
+    limit: number
+  ): Promise<IProductResponse> {
     return apiService
-      .get(`/api/v1/brands`, {
-        params: { page, limit },
+      .get(`/api/v1/products/brand/${brandId}`, {
+        // Đảm bảo endpoint này là chính xác
+        params: { page: page + 2, limit },
       })
-      .then((response) => response.data);
+      .then((response) => {
+        // Đảm bảo trả về toàn bộ dữ liệu cần thiết
+        return {
+          products: response.data.products,
+          totalPages: response.data.totalPages, // Đảm bảo rằng totalPages có trong phản hồi
+        };
+      });
   },
 };

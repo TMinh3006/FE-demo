@@ -1,63 +1,41 @@
-// src/components/UserInfo.tsx
-import React, { useEffect, useState } from 'react';
-import {
-  Layout,
-  Menu,
-  Card,
-  Typography,
-  Divider,
-  Button,
-  Steps,
-  List,
-  Form,
-  Input,
-  DatePicker,
-  message,
-  Avatar,
-} from 'antd';
-
-import userService from '@/Apis/Auth/Auth.api';
-import userUpdate from '@/Apis/Auth/Auth.api';
+// src/components/CustomerInfo.tsx
+import React, { useCallback, useEffect, useState } from 'react';
+import { Avatar, Card, Layout, Menu, Typography } from 'antd';
+import UserInfo from './UserInfo';
+import OrderList from './OrderList';
 import { User } from '@/Apis/Auth/Auth.interface';
-import moment from 'moment';
+import userService from '@/Apis/Auth/Auth.api';
 
-const { Text } = Typography;
-const { Step } = Steps;
+import { UserOutlined } from '@ant-design/icons';
+
 const { Sider, Content } = Layout;
+const { Title } = Typography;
 
 const CustomerInfo: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [form] = Form.useForm();
   const [activeMenu, setActiveMenu] = useState<string>('personalInfo');
 
-  const getUser = async () => {
+  const getUser = useCallback(async () => {
     try {
       const id = localStorage.getItem('id');
       if (id === null) return;
       const response = await userService.getUserById(id);
       setUser(response);
-
-      form.setFieldsValue({
-        fullName: response.fullName,
-        phoneNumber: response.phoneNumber,
-        address: response.address,
-        dateOfBirth: moment(response.dateOfBirth),
-      });
     } catch (error) {
       console.error('Error fetching user data:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     getUser();
-  }, [form]);
+  }, [getUser]);
 
   const handleLogout = () => {
     const confirmLogout = window.confirm('Bạn có chắc chắn muốn đăng xuất?');
 
     if (confirmLogout) {
       localStorage.removeItem('fullName');
+      localStorage.removeItem('id');
       localStorage.removeItem('accessToken');
       window.location.href = '/login';
     }
@@ -66,264 +44,81 @@ const CustomerInfo: React.FC = () => {
   const handleMenuClick = (menu: string) => {
     setActiveMenu(menu);
   };
-  const handleSave = async () => {
-    try {
-      const id = localStorage.getItem('id');
-      if (!id) {
-        console.error('Không tìm thấy id người dùng.');
-        return;
-      }
-
-      const values = await form.validateFields();
-
-      const response = await userUpdate.updateUserById(id, {
-        fullname: values.fullname,
-        phone_number: values.phone_number,
-        address: values.address,
-        date_of_birth: values.date_of_birth.format('YYYY-MM-DD'),
-      });
-
-      setUser(response);
-      setIsEditing(false);
-
-      message.success('Thông tin đã được cập nhật!');
-    } catch (error) {
-      console.log('Validation Failed or API Error:', error);
-      message.error('Cập nhật thông tin thất bại.');
-    }
-  };
-
-  if (!user) return <p>Loading...</p>;
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#F9E1E0' }}>
+    <Layout
+      style={{ minHeight: '50vh', background: '#F9E1E0', padding: '20px' }}
+    >
       <Sider
-        width={350}
+        width={300}
         style={{
-          background: '#F9E1E0',
-          marginLeft: '200px',
-          marginTop: '30px',
-          fontSize: '25px',
+          background: '#FF6F91',
+          borderRadius: '8px',
+          padding: '20px',
         }}
       >
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '20px 0',
-          }}
-        >
-          <Avatar size={64} />
-          <div style={{ marginTop: 2 }}>{user?.fullName}</div>
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+          <Avatar size={64} icon={<UserOutlined />} />
+          <Title
+            level={3}
+            style={{ color: '#fff', margin: '10px 0', fontSize: '24px' }}
+          >
+            {user?.fullName}
+          </Title>
         </div>
-        <Divider />
         <Menu
           mode="inline"
           selectedKeys={[activeMenu]}
           style={{
-            background: '#F9E1E0',
-            borderRight: 'none',
-            fontSize: '20px',
+            background: 'transparent',
+            color: '#fff',
           }}
         >
           <Menu.Item
             key="personalInfo"
             onClick={() => handleMenuClick('personalInfo')}
+            style={{
+              color: activeMenu === 'personalInfo' ? '#F9E1E0' : '#fff',
+              background:
+                activeMenu === 'personalInfo' ? '#D53A67' : 'transparent',
+              borderRadius: '4px',
+              fontSize: '18px',
+            }}
           >
             Thông Tin Cá Nhân
           </Menu.Item>
-          <Menu.Item key="orders" onClick={() => handleMenuClick('orders')}>
+          <Menu.Item
+            key="orders"
+            onClick={() => handleMenuClick('orders')}
+            style={{
+              color: activeMenu === 'orders' ? '#F9E1E0' : '#fff',
+              background: activeMenu === 'orders' ? '#D53A67' : 'transparent',
+              borderRadius: '4px',
+              fontSize: '18px',
+            }}
+          >
             Đơn Hàng Của Tôi
           </Menu.Item>
-          <Menu.Item key="logout" onClick={handleLogout}>
+          <Menu.Item
+            key="logout"
+            onClick={handleLogout}
+            style={{ color: '#fff', fontSize: '18px' }}
+          >
             Đăng Xuất
           </Menu.Item>
         </Menu>
       </Sider>
 
-      <Content style={{ margin: '16px 16px 0', overflow: 'initial' }}>
-        {activeMenu === 'personalInfo' ? (
-          <Card
-            title="Thông Tin Cá Nhân"
-            style={{ width: '90%', margin: '40px auto', marginRight: '200px' }}
-          >
-            {isEditing ? (
-              <Form form={form} layout="vertical">
-                <Form.Item
-                  label="Họ Tên"
-                  name="fullname"
-                  rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}
-                >
-                  <Input />
-                </Form.Item>
-                <Form.Item
-                  label="Ngày Sinh"
-                  name="date_of_birth"
-                  rules={[
-                    { required: true, message: 'Vui lòng chọn ngày sinh!' },
-                  ]}
-                >
-                  <DatePicker format="YYYY-MM-DD" />
-                </Form.Item>
-                <Form.Item
-                  label="Số Điện Thoại"
-                  name="phoneNumber"
-                  rules={[
-                    {
-                      required: true,
-                      message: 'Vui lòng nhập số điện thoại!',
-                    },
-                  ]}
-                >
-                  <Input />
-                </Form.Item>
-                <Form.Item
-                  label="Địa Chỉ"
-                  name="address"
-                  rules={[
-                    { required: true, message: 'Vui lòng nhập địa chỉ!' },
-                  ]}
-                >
-                  <Input />
-                </Form.Item>
-                <Button type="primary" onClick={handleSave}>
-                  Lưu
-                </Button>
-                <Button
-                  onClick={() => setIsEditing(false)}
-                  style={{ marginLeft: 10 }}
-                >
-                  Hủy
-                </Button>
-              </Form>
-            ) : (
-              <>
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 10,
-                  }}
-                >
-                  <Text
-                    style={{
-                      minWidth: 150,
-                      marginLeft: '300px',
-                    }}
-                  >
-                    Họ và Tên:
-                    <span
-                      style={{
-                        fontWeight: 'bold',
-                        border: 'none',
-                        padding: '20px',
-                        borderRadius: 3,
-                        marginLeft: 10,
-                        fontSize: '20px',
-                      }}
-                    >
-                      {user?.fullName}
-                    </span>
-                  </Text>
-                  <Text
-                    style={{
-                      minWidth: 150,
-                      marginLeft: '300px',
-                    }}
-                  >
-                    Ngày Sinh:
-                    <span
-                      style={{
-                        fontWeight: 'bold',
-                        border: 'none',
-                        padding: '20px',
-                        borderRadius: 3,
-                        marginLeft: 10,
-                        fontSize: '20px',
-                      }}
-                    >
-                      {new Date(user?.dateOfBirth).toLocaleDateString()}
-                    </span>
-                  </Text>
-                  <Text
-                    style={{
-                      minWidth: 150,
-                      marginLeft: '300px',
-                    }}
-                  >
-                    Số Điện Thoại:
-                    <span
-                      style={{
-                        fontWeight: 'bold',
-                        border: 'none',
-                        borderRadius: 3,
-                        marginLeft: 8,
-                        fontSize: '20px',
-                      }}
-                    >
-                      {user?.phoneNumber}
-                    </span>
-                  </Text>
-                  <Text
-                    style={{
-                      minWidth: 150,
-                      marginLeft: '300px',
-                    }}
-                  >
-                    Địa Chỉ:
-                    <span
-                      style={{
-                        fontWeight: 'bold',
-
-                        border: 'none',
-                        padding: '20px',
-                        borderRadius: 3,
-                        marginLeft: 10,
-                        fontSize: '20px',
-                      }}
-                    >
-                      {user?.address}
-                    </span>
-                  </Text>
-                </div>
-
-                <Button
-                  type="primary"
-                  onClick={() => setIsEditing(true)}
-                  style={{ marginTop: 20, marginLeft: '500px' }}
-                >
-                  Chỉnh Sửa
-                </Button>
-              </>
-            )}
-          </Card>
-        ) : (
-          <Card
-            title="Đơn Hàng Của Tôi"
-            style={{ width: '90%', margin: '40px auto', marginRight: '200px' }}
-          >
-            <Steps current={1} style={{ marginBottom: 20 }}>
-              <Step title="Tất Cả" />
-              <Step title="Đang Xử Lý" />
-              <Step title="Đang Giao" />
-              <Step title="Đã Giao" />
-              <Step title="Đã Hủy" />
-            </Steps>
-            <List
-              itemLayout="horizontal"
-              dataSource={[]} // Thay bằng danh sách đơn hàng của bạn
-              renderItem={(item) => (
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={<Avatar src={item.productThumbnail} />} // Hiển thị ảnh sản phẩm
-                    title={<a href={item.productLink}>{item.productName}</a>} // Tên sản phẩm
-                    description={`Giá: ${item.price} - Số lượng: ${item.quantity}`} // Giá và số lượng
-                  />
-                  <div>{item.status}</div> {/* Hiển thị trạng thái đơn hàng */}
-                </List.Item>
-              )}
-            />
-          </Card>
-        )}
+      <Content style={{ marginLeft: '20px' }}>
+        <Card
+          style={{
+            borderRadius: '8px',
+            padding: '20px 0',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.1)',
+          }}
+        >
+          {activeMenu === 'personalInfo' ? <UserInfo /> : <OrderList />}
+        </Card>
       </Content>
     </Layout>
   );

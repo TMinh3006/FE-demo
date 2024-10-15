@@ -1,4 +1,9 @@
-import { ICart, ICartItem } from './Cart.Interface';
+import {
+  AddToCartRequest,
+  ICartItem,
+  IDecreaseQuantityResponse,
+  IDeleteCartResponse,
+} from './Cart.Interface';
 import { apiService } from '@/configs/apiService';
 
 export default {
@@ -7,48 +12,46 @@ export default {
       .get(`/api/v1/carts/user/${id}`)
 
       .then((response) => {
-        return response.data;
+        return response.data.cartItems;
       });
   },
   decreaseQuantity(
     userId: string,
     productId: number,
     amount: number
-  ): Promise<ICart[]> {
+  ): Promise<IDecreaseQuantityResponse> {
     return apiService
       .post(
         `/api/v1/carts/user/${userId}/decrease?productId=${productId}&amount=${amount}`
       )
 
       .then((response) => {
-        // localStorage.setItem('accessToken', response.data);
         return response.data;
       });
   },
 
   increaseQuantity(
     userId: string,
-    product_id: number,
-    quantity: number
-  ): Promise<ICart[]> {
+    data: AddToCartRequest
+  ): Promise<AddToCartRequest[]> {
     return apiService
-      .post(`/api/v1/carts/user/${userId}/add`, {
-        product_id: product_id,
-        quantity: quantity,
-      })
+      .post(`/api/v1/carts/user/${userId}/add`, data)
 
       .then((response) => {
-        // localStorage.setItem('accessToken', response.data);
         return response.data;
       });
   },
 
-  removeCart(userId: string, cartItemId: number): Promise<ICart[]> {
+  removeCart(userId: string, cartItemId: number): Promise<IDeleteCartResponse> {
     return apiService
-      .get(`/api/v1/carts/user/${userId}/remove?cartItemId=${cartItemId}`)
+      .delete(`/api/v1/carts/user/${userId}/remove?cartItemId=${cartItemId}`)
       .then((response) => {
-        // localStorage.setItem('accessToken', response.data);
         return response.data;
       });
+  },
+  clearCart(userId: string): Promise<void> {
+    return apiService
+      .delete(`/api/v1/carts/user/${userId}/clear`)
+      .then(() => {});
   },
 };
