@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Layout, Typography, Button, Result } from 'antd';
 import { Link } from 'react-router-dom';
 
@@ -6,6 +6,17 @@ const { Title, Text } = Typography;
 const { Content } = Layout;
 
 const OrderSuccessPage: React.FC = () => {
+  useEffect(() => {
+    if (!sessionStorage.getItem('isPageReloaded')) {
+      sessionStorage.setItem('isPageReloaded', 'true');
+
+      const timer = setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, []);
   return (
     <Layout style={{ minHeight: '100vh', background: '#F9E1E0' }}>
       <Content style={{ padding: '50px' }}>

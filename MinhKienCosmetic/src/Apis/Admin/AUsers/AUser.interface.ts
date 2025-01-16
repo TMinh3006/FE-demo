@@ -1,14 +1,27 @@
+export interface Role {
+  name: string;
+  description: string;
+  permissions: string[];
+}
 export interface IUser {
-  id: number;
-  fullName: string;
-  email: string;
-  address: string;
-  dateOfBirth: string; // Bạn có thể thay đổi kiểu thành Date nếu cần
-  phone_number: string;
-  active: boolean;
+  code: number;
+  result: {
+    id: string;
+    username: string;
+    dob?: string | null;
+    email?: string;
+    emailVerified: boolean;
+    password: string;
+    name: string | null;
+    gender: string | null;
+    age: number | null;
+    occupation: string | null;
+    roles: Role[];
+    active: boolean;
+  };
 }
 
 export interface IUserResponse {
-  users: IUser[];
-  totalPages: number;
+  code: number;
+  result: IUser[];
 }

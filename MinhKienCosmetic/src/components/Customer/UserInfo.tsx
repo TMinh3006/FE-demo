@@ -12,35 +12,36 @@ import {
   Row,
 } from 'antd';
 import userService from '@/Apis/Auth/Auth.api';
-import userUpdate from '@/Apis/Auth/Auth.api';
-import { User } from '@/Apis/Auth/Auth.interface';
+import { IUser } from '@/Apis/Auth/Auth.interface';
 import moment from 'moment';
 import {
   CalendarOutlined,
-  HomeOutlined,
+  MailOutlined,
   PhoneOutlined,
+  TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 
 const { Text } = Typography;
 
 const UserInfo: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<IUser['result'] | null>(null);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [form] = Form.useForm();
 
   const getUser = useCallback(async () => {
     try {
-      const id = localStorage.getItem('id');
+      const id = localStorage.getItem('userId');
       if (id === null) return;
       const response = await userService.getUserById(id);
-      setUser(response);
+      setUser(response.result);
 
       form.setFieldsValue({
-        fullname: response.fullName,
-        email: response.email,
-        address: response.address,
-        date_of_birth: moment(response.dateOfBirth),
+        fullname: response.result.name,
+        email: response.result.email,
+        phoneNumber: response.result.phoneNumber,
+        date_of_birth: moment(response.result.dob),
+        gender: response.result.gender,
       });
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -53,7 +54,7 @@ const UserInfo: React.FC = () => {
 
   const handleSave = async () => {
     try {
-      const id = localStorage.getItem('id');
+      const id = localStorage.getItem('userId');
       if (!id) {
         console.error('Không tìm thấy id người dùng.');
         return;
@@ -61,23 +62,25 @@ const UserInfo: React.FC = () => {
 
       const values = await form.validateFields();
 
-      const response = await userUpdate.updateUserById(id, {
-        fullname: values.fullname,
+      const updatedUser = {
+        name: values.fullname,
         email: values.email,
-        address: values.address,
-        date_of_birth: values.date_of_birth.format('YYYY-MM-DD'),
-      });
+        phoneNumber: values.phoneNumber,
+        dob: values.date_of_birth
+          ? values.date_of_birth.format('YYYY-MM-DD')
+          : null,
+      };
 
-      setUser(response);
+      const response = await userService.updateUserById(id, updatedUser);
+
+      setUser(response.result);
       setIsEditing(false);
-
       message.success('Thông tin đã được cập nhật!');
     } catch (error) {
-      console.log('Validation Failed or API Error:', error);
+      console.error('Validation Failed or API Error:', error);
       message.error('Cập nhật thông tin thất bại.');
     }
   };
-
   if (!user) return <p>Loading...</p>;
 
   return (
@@ -112,8 +115,15 @@ const UserInfo: React.FC = () => {
                 <Input />
               </Form.Item>
               <Form.Item
-                label="Địa Chỉ"
-                name="address"
+                label="Số điện thoại"
+                name="phoneNumber"
+                rules={[{ required: true, message: 'Vui lòng nhập địa chỉ!' }]}
+              >
+                <Input />
+              </Form.Item>
+              <Form.Item
+                label="Giới tính"
+                name="gender"
                 rules={[{ required: true, message: 'Vui lòng nhập địa chỉ!' }]}
               >
                 <Input />
@@ -158,25 +168,31 @@ const UserInfo: React.FC = () => {
             <Card style={{ marginBottom: '16px' }}>
               <Text strong>
                 <UserOutlined style={{ marginRight: '8px' }} />
-                Họ và Tên: {user?.fullName}
+                Họ và Tên: {user?.name}
               </Text>
             </Card>
             <Card style={{ marginBottom: '16px' }}>
               <Text strong>
                 <CalendarOutlined style={{ marginRight: '8px' }} />
-                Ngày Sinh: {new Date(user?.dateOfBirth).toLocaleDateString()}
+                Ngày Sinh: {new Date(user?.dob).toLocaleDateString()}
               </Text>
             </Card>
             <Card style={{ marginBottom: '16px' }}>
               <Text strong>
-                <PhoneOutlined style={{ marginRight: '8px' }} />
+                <MailOutlined style={{ marginRight: '8px' }} />
                 Email: {user?.email}
               </Text>
             </Card>
             <Card style={{ marginBottom: '16px' }}>
               <Text strong>
-                <HomeOutlined style={{ marginRight: '8px' }} />
-                Địa Chỉ: {user?.address}
+                <TeamOutlined style={{ marginRight: '8px' }} />
+                Giới tính: {user?.gender}
+              </Text>
+            </Card>
+            <Card style={{ marginBottom: '16px' }}>
+              <Text strong>
+                <PhoneOutlined style={{ marginRight: '8px' }} />
+                Số điện thoại: {user?.phoneNumber}
               </Text>
             </Card>
           </Col>

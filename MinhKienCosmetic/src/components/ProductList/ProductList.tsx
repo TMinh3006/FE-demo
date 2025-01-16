@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
-import { IProduct } from '@/Apis/Product/Product.interface';
+import { IProductDetail } from '@/Apis/Product/Product.interface';
 
 type ProductListsProps = {
   selectedProductIndex: number;
-  products: IProduct[];
-  handleProcductClick: (product: IProduct) => void;
+  products: IProductDetail[];
+  handleProcductClick: (product: IProductDetail) => void;
 };
 
 const ProductList = ({
@@ -41,7 +41,11 @@ const ProductList = ({
           className={`${selectedProductIndex === index ? 'bg-gray-200' : ''} flex cursor-pointer items-center justify-between gap-8 px-4 py-2 hover:bg-gray-200`}
           onClick={() => handleProcductClick(product)}
         >
-          <img src={product.thumbnails} alt="" className="w-8" />
+          <img
+            src={product.thumbnails?.[0] || '/default-image.jpg'}
+            alt={product.name}
+            className="w-8"
+          />
           <p className="truncate-limit-custom2">{product.name}</p>
 
           <p>{product.price.toLocaleString()}đ</p>

@@ -1,5 +1,9 @@
 export interface ICategory {
-  id: number;
+  id: string;
   name: string;
-  parent_id: number;
+  parent_id: string;
+}
+export interface Category {
+  name: string;
+  parent_id: string;
 }

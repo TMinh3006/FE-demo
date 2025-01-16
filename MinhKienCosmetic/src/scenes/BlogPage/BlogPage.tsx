@@ -1,67 +1,64 @@
-import React from 'react';
-import blog1 from '@/assets/blog1.png';
-import blog2 from '@/assets/blog2.png';
-import blog3 from '@/assets/blog3.jpg';
-import blog4 from '@/assets/blog4.png';
+import React, { useEffect, useState } from 'react';
+import blogService from '@/Apis/Blog/Blog.api';
+import { IBlog } from '@/Apis/Blog/Blog.interface';
 import { Col, Divider, Row } from 'antd';
+import { Link } from 'react-router-dom';
 
 const BlogPage: React.FC = () => {
-  const NewsATip = [
-    {
-      img: blog1,
-      name: 'CHĂM DA CHUẨN HÀN - NHẬT & SĂN QUÀ KHỦNG| TỔNG GIÁ TRỊ LÊN ĐẾN 400 TRIỆU',
-      detail:
-        'Số 429 phần quà SIÊU HẤP DẪN khi nàng tham dự “CHECK-IN CHALLENGE” tại 13 cửa hàng Guardian duy nhất...',
-    },
-    {
-      img: blog2,
-      name: 'Duft and Doft - Bí quyết cho cơ thể luôn thơm ngát ',
-      detail:
-        'Với mùi hương tựa nước hoa cao cấp cùng 100 giờ tạo nên thành phẩm, Duft and Doft sẽ là sự lựa chọn...',
-    },
-    {
-      img: blog3,
-      name: 'Giảm mụn ngay từ bước làm sạch với sữa rửa mặt cho da mụn, bạn có tin?',
-      detail:
-        'Với kết cấu dạng gel tạo bọt, vừa đủ độ êm ái, sữa rửa mặt Eucerin Pro Acne 3X Cleanser hạn chế tối...',
-    },
-    {
-      img: blog4,
-      name: 'MAKEUP TUYỆT ĐỈNH - TỰ TIN TUYỆT ĐỐI | QUÀ TẶNG TÚI XINH CHỈ CÓ TẠI GUARDIAN THÁNG 8 NÀY!',
-      detail:
-        ' “Cosmetic Fair” với sự góp mặt các siêu phẩm makeup thịnh hành cùng chuỗi hoạt động khám phá...',
-    },
-  ];
+  const [blogs, setBlogs] = useState<IBlog[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      try {
+        const data = await blogService.getBlog(0, 4);
+        setBlogs(data);
+      } catch (error) {
+        console.error('Lỗi khi tải blogs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBlogs();
+  }, []);
+
+  if (loading) {
+    return <div>Đang tải...</div>;
+  }
 
   return (
     <div>
       <Divider
-        orientation="left"
-        style={{ fontSize: '30px', fontWeight: '700' }}
+        orientation="center"
+        style={{ fontSize: '28px', fontWeight: '700', paddingTop: '25px' }}
       >
         Tin Tức & Cẩm Nang Làm Đẹp
       </Divider>
-      <Row className="flex items-center justify-center p-6" gutter={16}>
-        {NewsATip.map((item, index) => (
+      <Row className="flex items-center justify-center pb-4" gutter={16}>
+        {blogs.map((item, index) => (
           <Col
-            className="m-3 flex w-60 flex-col items-center justify-center rounded-md bg-white py-2 font-bold"
+            className="m-3 flex w-60 flex-col items-center justify-center rounded-md bg-slate-50 pb-4 font-bold shadow-lg"
             key={index}
             span={5}
           >
-            <img
-              src={item.img}
-              alt={item.name}
-              className="h-full w-full rounded-md object-cover"
-            />
+            <Link to={`/blog/${item.id}`}>
+              <img
+                src={item.thumbnails?.[0]}
+                alt={item.title}
+                className="h-full w-full rounded-md object-cover"
+              />
+            </Link>
+            <Link to={`/blog/${item.id}`}>
+              <div className="mt-2 w-full">
+                <button className="truncate-limit-custom w-full text-sm font-semibold">
+                  {item.title}
+                </button>
+              </div>
+            </Link>
 
-            <div className="mt-2 w-full">
-              <button className="truncate-limit-custom w-full text-sm font-semibold">
-                {item.name}
-              </button>
-            </div>
-
-            <div className="truncate-limit-custom mt-1 w-full text-xs text-gray-500">
-              {item.detail}
+            <div className="truncate-limit-custom mt-1 w-full font-normal text-gray-600">
+              {item.description}
             </div>
           </Col>
         ))}

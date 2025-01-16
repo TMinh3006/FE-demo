@@ -1,27 +1,23 @@
 import { ChangeEvent, KeyboardEvent, useEffect, useState } from 'react';
 import { Input } from 'antd';
-import type { GetProps } from 'antd';
+
 import ProductList from '@/components/ProductList/ProductList';
 import productApi from '@/Apis/Product/Product.api';
-import { IProduct } from '@/Apis/Product/Product.interface';
+import { IProductDetail } from '@/Apis/Product/Product.interface';
 import { useNavigate } from 'react-router-dom';
-
-type SearchProps = GetProps<typeof Input.Search>;
+import { SearchOutlined } from '@ant-design/icons';
 
 function SearchBar() {
-  const { Search } = Input;
-  const onSearch: SearchProps['onSearch'] = (value, _e, info) =>
-    console.log(info?.source, value);
   const [query, setQuery] = useState('');
-  const [products, setProducts] = useState<IProduct[]>([]);
-  const [searchResults, setSearchResult] = useState<IProduct[]>([]);
+  const [products, setProducts] = useState<IProductDetail[]>([]);
+  const [searchResults, setSearchResult] = useState<IProductDetail[]>([]);
   const [selectedProductIndex, setSelectedProductIndex] = useState<number>(-1);
   const navigate = useNavigate();
 
   const getProducts = async () => {
     try {
-      const response = await productApi.getProducts(0, 80);
-      setProducts(response);
+      const response = await productApi.getProducts(0, 1000);
+      setProducts(response.result.products);
     } catch (error) {
       console.error('Error: ', error);
     }
@@ -61,7 +57,7 @@ function SearchBar() {
     }
   }
 
-  function handleProcductClick(product: IProduct) {
+  function handleProcductClick(product: IProductDetail) {
     navigate(`/productDetail/${product.id}`);
     setQuery('');
     setSelectedProductIndex(-1);
@@ -69,19 +65,22 @@ function SearchBar() {
   }
 
   return (
-    <div className="mx-4 w-full max-w-3xl">
-      <Search
+    <div className="mx-6 w-full max-w-3xl">
+      <Input
         allowClear
-        onSearch={onSearch}
         style={{
           width: '100%',
-          padding: '10px',
+          padding: '8px 12px',
           fontSize: '16px',
+          borderRadius: '50px',
+          border: '1px solid #ddd',
+          boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
         }}
         onChange={handleQueryChange}
         onKeyDown={handleKeyDown}
         value={query}
         placeholder="Tìm kiếm sản phẩm..."
+        prefix={<SearchOutlined />}
       />
 
       {query !== '' && searchResults.length > 0 && (
@@ -91,6 +90,12 @@ function SearchBar() {
             selectedProductIndex={selectedProductIndex}
             handleProcductClick={handleProcductClick}
           />
+        </div>
+      )}
+
+      {query !== '' && searchResults.length === 0 && (
+        <div className="mt-2 text-center text-gray-500">
+          Không có sản phẩm nào
         </div>
       )}
     </div>

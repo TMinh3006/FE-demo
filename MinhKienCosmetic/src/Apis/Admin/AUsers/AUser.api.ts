@@ -2,18 +2,12 @@ import { IUserResponse } from './AUser.interface';
 import { apiService } from '@/configs/apiService';
 
 export default {
-  getUsers(page: number, limit: number): Promise<IUserResponse> {
-    return apiService
-      .get(`/api/v1/users`, {
-        params: { page, limit },
-      })
-      .then((response) => response.data);
+  getUsers(): Promise<IUserResponse> {
+    return apiService.get(`/identity/users`).then((response) => response.data);
   },
-  updateUserActiveStatus(id: number, isActive: boolean): Promise<void> {
+  updateUserActiveStatus(userId: string): Promise<void> {
     return apiService
-      .put(`/api/v1/users/active/${id}`, null, {
-        params: { isActive },
-      })
+      .put(`/identity/users/${userId}/deactivate`)
       .then((response) => {
         return response.data;
       });

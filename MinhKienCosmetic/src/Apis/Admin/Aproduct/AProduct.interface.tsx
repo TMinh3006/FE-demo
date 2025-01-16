@@ -1,32 +1,42 @@
-export interface IProduct {
+export interface IProductDetail {
+  id: string;
   name: string;
   price: number;
   quantity: number;
-  thumbnails: string[];
-  ingredients: string[];
   description: string;
+  thumbnails?: string[];
+  ingredient?: string[];
   userManual: string;
-  category_id: number;
-  brand_id: number;
+  categoryId: string;
+  brandId: string;
+  discount: number;
+  newPrice: number;
 }
-export interface Product {
-  createdAt: string;
-  updatedAt: string;
-  id: number;
+export interface ProductDetail {
+  discount: number;
+  newPrice: number;
   name: string;
   price: number;
   quantity: number;
   description: string;
-  thumbnails: string[];
-  ingredient: string[];
+  thumbnails?: string[];
+  ingredient?: string[];
   userManual: string;
-  category: {
-    id: number;
-    name: string;
-    parent_id: number;
-  };
-  brand: {
-    id: number;
-    name: string;
-  };
+  categoryId: string;
+  brandId: string;
+}
+export interface IProductResponse {
+  products: IProductDetail[];
+  totalPages: number;
+}
+
+export interface IProduct {
+  code: number;
+  message: string;
+  result: IProductResponse;
+}
+export interface IProducts {
+  code: number;
+  message: string;
+  result: IProductDetail;
 }

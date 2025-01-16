@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, message, Modal, Form, Input, Table } from 'antd';
+import { Button, message, Modal, Form, Input, Table, Popconfirm } from 'antd';
 import categoryApi from '@/Apis/Admin/ACategories/ACategory.api';
 import { ICategory } from '@/Apis/Admin/ACategories/ACategory.interface';
 
@@ -11,14 +11,6 @@ const CategoryList: React.FC = () => {
     null
   );
   const [form] = Form.useForm();
-
-  const checkAdminRole = () => {
-    const userRole = localStorage.getItem('role');
-    if (userRole !== '1') {
-      message.error('Bạn không có quyền truy cập vào trang này');
-      window.location.href = '/';
-    }
-  };
 
   const fetchCategories = async () => {
     setLoading(true);
@@ -34,11 +26,10 @@ const CategoryList: React.FC = () => {
   };
 
   useEffect(() => {
-    checkAdminRole();
     fetchCategories();
   }, []);
 
-  const getParentName = (parentId: number): string => {
+  const getParentName = (parentId: string) => {
     const parentCategory = categories.find((cat) => cat.id === parentId);
     return parentCategory ? parentCategory.name : 'danh mục cha';
   };
@@ -73,7 +64,7 @@ const CategoryList: React.FC = () => {
     }
   };
 
-  const handleDelete = async (categoryId: number) => {
+  const handleDelete = async (categoryId: string) => {
     Modal.confirm({
       title: 'Xác nhận',
       content: 'Bạn có chắc chắn muốn xóa danh mục này?',
@@ -117,12 +108,17 @@ const CategoryList: React.FC = () => {
       key: 'action',
       render: (_: unknown, record: ICategory) => (
         <>
-          <Button type="link" onClick={() => showModal(record)}>
+          <Button style={{ marginRight: 8 }} onClick={() => showModal(record)}>
             Sửa
           </Button>
-          <Button type="link" danger onClick={() => handleDelete(record.id)}>
-            Xóa
-          </Button>
+          <Popconfirm
+            title="Bạn có chắc chắn muốn xóa bài viết này?"
+            onConfirm={() => handleDelete(record.id)}
+            okText="Có"
+            cancelText="Không"
+          >
+            <Button danger>Xóa</Button>
+          </Popconfirm>
         </>
       ),
     },

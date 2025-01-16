@@ -3,13 +3,13 @@ import Gallary from './Gallary';
 import { Tabs } from 'antd';
 import Productinfo from './Productinfo';
 import productApi from '@/Apis/Product/Product.api';
-import { IProduct } from '@/Apis/Product/Product.interface';
+import { IProducts } from '@/Apis/Product/Product.interface';
 import { useParams } from 'react-router-dom';
 
 const { TabPane } = Tabs;
 
 const ProductDetail: React.FC = () => {
-  const [product, setProduct] = useState<IProduct | null>(null);
+  const [product, setProduct] = useState<IProducts | null>(null);
   const { id } = useParams<{ id: string }>();
 
   const ProductById = async (id: string) => {
@@ -28,90 +28,113 @@ const ProductDetail: React.FC = () => {
     }
   }, [id]);
 
-  if (!product) {
+  if (!product || !product.result) {
     return <div>Loading...</div>;
   }
-
   return (
-    <div className="flex flex-col gap-10">
-      <section className="flex px-8 py-0">
+    <div className="flex flex-col bg-white">
+      <section className="flex px-12 pt-2">
         <div className="flex-1">
-          <Gallary images={product.thumbnails} />
+          <Gallary images={product.result.thumbnails} />
         </div>
 
         <div className="flex-1">
           <Productinfo
-            id={product.id}
-            name={product.name}
-            price={product.price}
-            quantity={product.quantity}
-            thumbnails={product.thumbnails}
-            ingredient={product.ingredient}
-            userManual={product.userManual}
-            brand={{ id: product.brand.id, name: product.brand.name }}
-            description={product.description}
+            id={product.result.id}
+            name={product.result.name}
+            price={product.result.price}
+            quantity={product.result.quantity}
+            thumbnails={product.result.thumbnails}
+            ingredient={product.result.ingredient}
+            userManual={product.result.userManual}
+            brandId={product.result.brandId}
+            description={product.result.description}
+            categoryId={product.result.categoryId}
+            sold={product.result.sold}
+            newPrice={product.result.newPrice}
+            discount={product.result.discount}
           />
         </div>
       </section>
-      <section>
+      <section className="mx-10">
         <Tabs
           defaultActiveKey="1"
           tabBarStyle={{
-            fontSize: '10px',
+            fontSize: '12px',
             fontWeight: 'bold',
-            background: '#fff',
-            padding: '10px',
+            background: '#FEADB9',
+            padding: '2px',
+            paddingLeft: '80px',
+            marginTop: '25px',
+            borderRadius: '20px 20px 20px 20px',
           }}
         >
           <TabPane
-            tab={<span className="bg-red-200 p-5 text-xl">Giới thiệu</span>}
+            tab={
+              <span className="inline-block rounded-md bg-slate-50 px-5 text-lg !text-pink-600">
+                Giới thiệu
+              </span>
+            }
             key="1"
           >
-            <div className="mb-3 ml-24 text-2xl font-semibold">
-              Mô tả chi tiết
-            </div>
+            <div className="m-2 rounded-xl p-2">
+              <div className="mb-1 ml-20 text-xl font-semibold">
+                Mô tả chi tiết
+              </div>
 
-            <div className="ml-10 text-lg">{product.description}</div>
-            <div className="flex flex-wrap items-center justify-center">
-              {product.thumbnails && product.thumbnails.length > 0 ? (
-                product.thumbnails.map((thumbnail, index) => (
-                  <img
-                    key={index}
-                    src={thumbnail} // Assuming each item in thumbnails is a URL
-                    alt={`Thumbnail ${index + 1}`}
-                    className="h-30 w-30 m-2 object-cover" // Example styling, adjust as needed
-                  />
-                ))
-              ) : (
-                <p>No images available</p>
-              )}
+              <div className="mb-5 ml-10 text-base">
+                {product.result.description}
+              </div>
+              <div className="mb-5 flex flex-col items-center justify-center space-y-4">
+                {product.result.thumbnails &&
+                product.result.thumbnails.length > 0 ? (
+                  product.result.thumbnails.map((thumbnail, index) => (
+                    <img
+                      key={index}
+                      src={thumbnail}
+                      alt={`Thumbnail ${index + 1}`}
+                      className="h-45 min-w-fit rounded-lg object-contain shadow-md"
+                    />
+                  ))
+                ) : (
+                  <p>No images available</p>
+                )}
+              </div>
             </div>
           </TabPane>
 
           <TabPane
             tab={
-              <span className="rounded-md bg-red-200 p-5 text-xl">
+              <span className="inline-block rounded-md bg-slate-50 px-5 text-lg !text-pink-600">
                 Thành phần
               </span>
             }
             key="2"
           >
-            <div className="mb-3 ml-24 text-2xl font-semibold">Thành Phần</div>
-            <div className="ml-10 text-xl">{product.ingredient}</div>
+            <div className="m-2 rounded-xl p-2">
+              <div className="mb-1 ml-24 text-xl font-semibold">Thành Phần</div>
+              <div className="mb-5 ml-10 text-lg">
+                {product.result.ingredient}
+              </div>
+            </div>
           </TabPane>
 
           <TabPane
             tab={
-              <span className="rounded-md bg-red-200 p-5 text-xl">
+              <span className="inline-block rounded-md bg-slate-50 px-5 text-lg !text-pink-600">
                 Hướng dẫn sử dụng
               </span>
             }
             key="4"
           >
-            <div className="mb-3 ml-24 text-2xl font-semibold">
-              Hướng Dẫn Sử Dụng
+            <div className="m-2 rounded-xl p-2">
+              <div className="mb-1 ml-24 text-xl font-semibold">
+                Hướng Dẫn Sử Dụng
+              </div>
+              <div className="mb-5 ml-10 text-lg">
+                {product.result.userManual}
+              </div>
             </div>
-            <div className="ml-10 text-xl">{product.userManual}</div>
           </TabPane>
         </Tabs>
       </section>

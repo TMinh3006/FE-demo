@@ -1,32 +1,36 @@
-export interface IProduct {
-  createdAt: string;
-  updatedAt: string;
-  id: number;
+export interface IProductDetail {
+  id: string;
   name: string;
   price: number;
   quantity: number;
   description: string;
-  thumbnails: string[];
-  ingredient: string[];
+  thumbnails?: string[];
+  ingredient?: string[];
   userManual: string;
-  category: {
-    id: number;
-    name: string;
-    parent_id: number;
-  };
-  brand: {
-    id: number;
-    name: string;
-  };
-  brandName: string;
+  categoryId: string;
+  brandId: string;
+  sold: number;
+  discount: number;
+  newPrice: number;
+}
+export interface IProductResponse {
+  products: IProductDetail[];
+  totalPages: number;
+}
+
+export interface IProduct {
+  code: number;
+  message: string;
+  result: IProductResponse;
+}
+export interface IProducts {
+  code: number;
+  message: string;
+  result: IProductDetail;
 }
 
 export interface AddToCartRequest {
   price: number;
-  product_id: number;
+  productId: string;
   quantity: number;
-}
-export interface IProductResponse {
-  products: IProduct[];
-  totalPages: number;
 }

@@ -2,48 +2,100 @@ import {
   AddToCartRequest,
   IProduct,
   IProductResponse,
+  IProducts,
 } from './Product.interface';
 import { apiService } from '@/configs/apiService';
 
 export default {
-  getProducts(page: number, limit: number): Promise<IProduct[]> {
+  getProducts(
+    page?: number,
+    limit?: number,
+    sortBy?: string,
+    sortDirection?: string,
+    brands?: string[],
+    priceRange?: [number, number]
+  ): Promise<IProduct> {
     return apiService
-      .get(`/api/v1/products`, {
-        params: { page, limit },
+      .get(`/products/get-all-products`, {
+        params: {
+          page,
+          limit,
+          sortBy,
+          sortDirection,
+          brands,
+          minPrice: priceRange?.[0],
+          maxPrice: priceRange?.[1],
+        },
       })
-      .then((response) => response.data.products);
+      .then((response) => response.data);
   },
 
   getProductBrand(page: number, limit: number): Promise<IProductResponse> {
     return apiService
-      .get(`/api/v1/products`, {
+      .get(`/products/get-all-products`, {
         params: { page, limit },
       })
       .then((response) => response.data.products);
   },
 
-  getById(id: string): Promise<IProduct & { id?: string }> {
-    return apiService.get(`/api/v1/products/${id}`).then((response) => {
-      console.log('API:', response);
+  getById(id: string): Promise<IProducts> {
+    return apiService.get(`/products/${id}`).then((response) => {
+      console.log('API response for product:', response.data);
       return response.data;
     });
   },
 
   getCategoryId(
     categoryId: string,
-    page: number,
-    limit: number
-  ): Promise<IProductResponse> {
+    page?: number,
+    limit?: number,
+    sortBy?: string,
+    sortDirection?: string,
+    brands?: string[],
+    priceRange?: [number, number]
+  ): Promise<IProduct> {
     return apiService
-      .get(`/api/v1/products/category/${categoryId}`, {
-        params: { page: page - 2, limit },
+      .get(`/products/category/${categoryId}`, {
+        params: {
+          page,
+          limit,
+          sortBy,
+          sortDirection,
+          brands,
+          minPrice: priceRange?.[0],
+          maxPrice: priceRange?.[1],
+        },
       })
       .then((response) => {
-        // Đảm bảo trả về đúng kiểu IProductResponse
-        return {
-          products: response.data.products,
-          totalPages: response.data.totalPages,
-        };
+        console.log('API:', response);
+        return response.data;
+      });
+  },
+
+  getBrandById(
+    brandId: string,
+    page?: number,
+    limit?: number,
+    sortBy?: string,
+    sortDirection?: string,
+    brands?: string[],
+    priceRange?: [number, number]
+  ): Promise<IProduct> {
+    return apiService
+      .get(`/products/brand/${brandId}`, {
+        params: {
+          page,
+          limit,
+          sortBy,
+          sortDirection,
+          brands,
+          minPrice: priceRange?.[0],
+          maxPrice: priceRange?.[1],
+        },
+      })
+      .then((response) => {
+        console.log('API:', response);
+        return response.data;
       });
   },
 
@@ -53,13 +105,12 @@ export default {
   ): Promise<AddToCartRequest[]> {
     console.log('Gửi yêu cầu đến API');
     return apiService
-      .post(`/api/v1/carts/add?userId=${userId}`, data)
+      .post(`/orders/cart/${userId}/items`, data)
       .then((response) => {
         return response.data;
       })
       .catch((error) => {
-        console.error('giỏ hàng sai:', error);
-        throw error; // Ném lỗi để xử lý ở nơi khác
+        throw error;
       });
   },
 };

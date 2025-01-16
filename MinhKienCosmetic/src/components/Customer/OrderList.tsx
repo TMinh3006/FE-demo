@@ -1,33 +1,84 @@
-// src/components/OrderList.tsx
 import React, { useEffect, useState } from 'react';
-import { Card, List, Avatar, Steps, Button } from 'antd';
-import { IOrder } from '@/Apis/OrderList/OrderList.interface';
+import { Card, List, Avatar, Steps, Button, Spin } from 'antd';
+import {
+  IOrder,
+  IOrderDetail,
+  IOrderListResponse,
+} from '@/Apis/OrderList/OrderList.interface';
 import OrderApi from '@/Apis/OrderList/OrderList.api';
 import { Link } from 'react-router-dom';
+import ProductApi from '@/Apis/Product/Product.api';
+import { IProductDetail } from '@/Apis/Product/Product.interface';
 
 const { Step } = Steps;
 
 const OrderList: React.FC = () => {
   const [orders, setOrders] = useState<IOrder[]>([]);
-  const [showAll, setShowAll] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
+  const [filteredOrders, setFilteredOrders] = useState<IOrder[]>([]);
+  const [currentStep, setCurrentStep] = useState<number>(0);
+  const [loadingOrders, setLoadingOrders] = useState<boolean>(false);
+  const [showAll, setShowAll] = useState<boolean>(false);
 
   const getOrders = async () => {
+    setLoadingOrders(true);
     try {
-      const userId = localStorage.getItem('id');
+      const userId = localStorage.getItem('userId');
       if (userId === null) return;
 
-      const response = await OrderApi.getOrdersByUserId(userId);
-      console.log(response);
-      setOrders(response);
-    } catch (e) {
-      console.log(e);
+      const orderResponse: IOrderListResponse =
+        await OrderApi.getOrdersByUserId(userId);
+      console.log('Order response:', orderResponse);
+
+      const ordersArray = orderResponse.result || [];
+
+      const enrichedOrders = await Promise.all(
+        ordersArray
+          .sort(
+            (a, b) =>
+              new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
+          )
+          .map(async (order) => {
+            const orderDetailResponse = await OrderApi.getOrderDetailById(
+              order.id
+            );
+            const orderDetailsArray = orderDetailResponse.result || [];
+
+            const enrichedDetails = await Promise.all(
+              orderDetailsArray.map(async (detail) => {
+                try {
+                  const product = await ProductApi.getById(detail.productId);
+                  return { ...detail, product: product.result };
+                } catch (error) {
+                  console.error(
+                    `Error fetching product ${detail.productId}:`,
+                    error
+                  );
+                  return detail;
+                }
+              })
+            );
+
+            return { ...order, orderDetailId: enrichedDetails };
+          })
+      );
+
+      setOrders(enrichedOrders);
+
+      setFilteredOrders(
+        enrichedOrders.filter(
+          (order) => order.status === getStatusByStep(currentStep)
+        )
+      );
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    } finally {
+      setLoadingOrders(false);
     }
   };
 
   useEffect(() => {
     getOrders();
-  }, []);
+  }, [currentStep]);
 
   const getStatusByStep = (step: number) => {
     switch (step) {
@@ -44,16 +95,6 @@ const OrderList: React.FC = () => {
     }
   };
 
-  // Lấy danh sách đơn hàng để hiển thị
-  const displayedOrders = showAll ? orders : orders.slice(0, 1);
-
-  const filteredOrders =
-    currentStep === 0
-      ? displayedOrders // Tất cả
-      : displayedOrders.filter(
-          (order) => order.status === getStatusByStep(currentStep)
-        );
-
   return (
     <Card title="Đơn Hàng Của Tôi">
       <Steps
@@ -61,92 +102,106 @@ const OrderList: React.FC = () => {
         onChange={setCurrentStep}
         style={{ marginBottom: 20 }}
       >
-        <Step title="pending" onClick={() => setCurrentStep(0)} />
-        <Step title="processing" onClick={() => setCurrentStep(1)} />
-        <Step title="shipped" onClick={() => setCurrentStep(2)} />
-        <Step title="delivered" onClick={() => setCurrentStep(3)} />
-        <Step title="cancelled" onClick={() => setCurrentStep(4)} />
+        <Step title="Đang chờ" onClick={() => setCurrentStep(0)} />
+        <Step title="Đang xử lý" onClick={() => setCurrentStep(1)} />
+        <Step title="Đang giao" onClick={() => setCurrentStep(2)} />
+        <Step title="Đã nhận" onClick={() => setCurrentStep(3)} />
+        <Step title="Đã hủy" onClick={() => setCurrentStep(4)} />
       </Steps>
-      <List
-        itemLayout="vertical"
-        dataSource={filteredOrders}
-        renderItem={(order) => (
-          <List.Item
-            style={{
-              border: '1px solid #f0f0f0',
-              borderRadius: '8px',
-              marginBottom: '20px',
-              padding: '15px',
-              background: '#fafafa',
-            }}
-          >
-            <List.Item.Meta
-              title={
-                <Link to={`/order/${order.id}`}>
-                  <span style={{ fontWeight: 'bold' }}>
-                    Đơn hàng #{order.id}
-                  </span>
-                </Link>
-              }
-              description={`Ngày đặt: ${new Date(order.orderDate).toLocaleDateString()} - Trạng thái: ${order.status}`}
-            />
-            <List
-              itemLayout="horizontal"
-              dataSource={order.orderDetails}
-              renderItem={(item) => (
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={<Avatar src={item.product.thumbnails[0]} />}
-                    title={
-                      <a
-                        href={`/ProductDetail/${item.product.id}`}
-                        style={{ color: '#F25EA3', fontWeight: 'bold' }}
-                      >
-                        {item.product.name}
-                      </a>
-                    }
-                    description={`Giá: ${item.price.toLocaleString()}đ - Số lượng: ${item.numberOfProducts}`}
-                  />
-                </List.Item>
-              )}
-            />
-            <div
+
+      {loadingOrders ? (
+        <Spin size="large" />
+      ) : (
+        <List
+          itemLayout="vertical"
+          dataSource={showAll ? filteredOrders : filteredOrders.slice(0, 3)}
+          renderItem={(order) => (
+            <List.Item
               style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                marginTop: 10,
-                width: '100%',
+                border: '1px solid #f0f0f0',
+                borderRadius: '8px',
+                marginBottom: '20px',
+                padding: '15px',
+                background: '#fafafa',
               }}
             >
+              <List.Item.Meta
+                title={
+                  <Link to={`/order/${order.id}`}>
+                    <span style={{ fontWeight: 'bold' }}>
+                      Đơn hàng #{order.id}
+                    </span>
+                  </Link>
+                }
+                description={`Ngày đặt: ${new Date(order.orderDate).toLocaleDateString()} - Trạng thái: ${
+                  order.status === 'pending'
+                    ? 'Đang chờ'
+                    : order.status === 'processing'
+                      ? 'Đang xử lý'
+                      : order.status === 'shipped'
+                        ? 'Đang giao'
+                        : order.status === 'delivered'
+                          ? 'Đã nhận'
+                          : order.status === 'cancelled'
+                            ? 'Đã hủy'
+                            : order.status
+                }`}
+              />
+              <List
+                itemLayout="horizontal"
+                dataSource={order.orderDetailId || []}
+                renderItem={(
+                  detail: IOrderDetail & { product?: IProductDetail }
+                ) => (
+                  <List.Item>
+                    <List.Item.Meta
+                      avatar={<Avatar src={detail.product?.thumbnails?.[0]} />}
+                      title={detail.product?.name || 'Sản phẩm không xác định'}
+                      description={`Số lượng: ${detail.quantity} - Giá: ${detail.newPrice ? detail.newPrice.toLocaleString() : detail.price.toLocaleString()}đ`}
+                    />
+                  </List.Item>
+                )}
+              />
               <div
                 style={{
-                  fontWeight: 'bold',
-                  fontSize: '16px',
-                  marginRight: '10px',
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  marginTop: 10,
+                  width: '100%',
                 }}
               >
-                Tổng tiền:
+                <div
+                  style={{
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    marginRight: '10px',
+                  }}
+                >
+                  Tổng tiền:
+                </div>
+                <div
+                  style={{
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    color: '#ff4d4f',
+                  }}
+                >
+                  {order.totalMoney.toLocaleString()}đ
+                </div>
               </div>
-              <div
-                style={{
-                  fontWeight: 'bold',
-                  fontSize: '16px',
-                  color: '#ff4d4f',
-                }}
-              >
-                {order.totalMoney.toLocaleString()}đ
-              </div>
-            </div>
-          </List.Item>
-        )}
-      />
+            </List.Item>
+          )}
+        />
+      )}
+
       {/* Nút xem tất cả đơn hàng */}
-      {!showAll && orders.length > 3 && (
+      {filteredOrders.length > 3 && (
         <Button
           type="link"
           style={{
             marginTop: '20px',
-            color: '#1890ff',
+            fontSize: '20px',
+            color: '#189',
             fontWeight: 'bold',
             textAlign: 'center',
             display: 'block',

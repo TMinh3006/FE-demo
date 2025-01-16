@@ -1,33 +1,3 @@
-export interface IRole {
-  id: number;
-  name: string;
-}
-
-export interface IAuthority {
-  authority: string;
-}
-
-export interface IUser {
-  createdAt: string;
-  updatedAt: string;
-  id: number;
-  fullName: string;
-  phoneNumber: string;
-  address: string;
-  password: string;
-  active: boolean;
-  dateOfBirth: string;
-  facebookAccountId: number;
-  googleAccountId: number;
-  role: IRole;
-  enabled: boolean;
-  accountNonLocked: boolean;
-  credentialsNonExpired: boolean;
-  accountNonExpired: boolean;
-  authorities: IAuthority[];
-  username: string;
-}
-
 export interface ICategory {
   id: number;
   name: string;
@@ -39,45 +9,38 @@ export interface IBrand {
   name: string;
 }
 
-export interface IProduct {
-  createdAt: string;
-  updatedAt: string;
-  id: number;
-  name: string;
-  price: number;
-  quantity: number;
-  description: string;
-  thumbnails: string[];
-  ingredient: string[];
-  userManual: string;
-  category: ICategory;
-  brand: IBrand;
-}
-
 export interface ICartItem {
-  id: number;
-  cart: string;
-  product: IProduct;
+  id: string;
+  cartId: string;
+  productId: string;
   quantity: number;
   price: number;
+  discount: number;
+  newPrice: number;
 }
 
-export interface ICart {
-  id: number;
-  user: IUser;
-  cartItems: ICartItem[];
+export interface ICartResult {
+  id: string;
+  userId: string;
+  total: number;
+  cartItemIds: ICartItem[];
 }
 
-export interface IDeleteCartResponse {
+export interface IApiResponse {
+  code: number;
   message: string;
-  status: string;
+  result: ICartResult;
 }
-export interface IDecreaseQuantityResponse {
-  success: boolean;
+
+export interface Response {
   message: string;
+  code: number;
 }
 
 export interface AddToCartRequest {
-  product_id: number;
+  productId: string;
   quantity: number;
+  price: number;
+  discount: number;
+  newPrice: number;
 }

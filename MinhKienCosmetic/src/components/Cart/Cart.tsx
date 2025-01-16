@@ -2,104 +2,190 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import EmptyCartImage from '@/assets/cart0.png';
 import CartApi from '@/Apis/Cart/Cart.api';
-import { AddToCartRequest, ICartItem } from '@/Apis/Cart/Cart.interface';
+import {
+  ICartItem,
+  Response,
+  AddToCartRequest,
+} from '@/Apis/Cart/Cart.Interface';
 import { DeleteOutlined } from '@ant-design/icons';
+import ProductApi from '@/Apis/Product/Product.api';
+import { IProductDetail } from '@/Apis/Product/Product.interface';
+import { message } from 'antd';
 
 const Cart = () => {
-  const [cartItems, setCartItems] = useState<ICartItem[]>([]);
+  const [cartItems, setCartItems] = useState<
+    (ICartItem & { product?: IProductDetail; selected: boolean })[]
+  >([]);
+  const [totalPrice, setTotalPrice] = useState(0);
 
-  const getCart = async () => {
+  const fetchCart = async () => {
     try {
-      const id = localStorage.getItem('id');
-      if (id === null) return;
+      const userId = localStorage.getItem('userId');
+      if (userId === null) return;
+      const cartData = await CartApi.getCartById(userId);
 
-      const response = await CartApi.getCartById(id);
-      console.log(response);
-      setCartItems(response);
-    } catch (e) {
-      console.log(e);
+      console.log('Cart data:', cartData);
+
+      if (!cartData || !cartData.result || !cartData.result.cartItemIds) {
+        console.warn('No cart data found or invalid structure.');
+        setCartItems([]);
+        return;
+      }
+
+      const cartItems = cartData.result.cartItemIds;
+
+      if (!cartItems || cartItems.length === 0) {
+        console.warn('No items in cart');
+        setCartItems([]);
+        return;
+      }
+
+      const cartWithDetails = await Promise.all(
+        cartItems.map(async (item) => {
+          const productResponse = await ProductApi.getById(item.productId);
+          console.log('Product data:', productResponse);
+          return {
+            ...item,
+            product: productResponse.result,
+            selected: false,
+          };
+        })
+      );
+      setCartItems(cartWithDetails);
+      calculateTotalPrice(cartWithDetails);
+    } catch (error) {
+      console.error('error fetching cart:', error);
     }
   };
+
   useEffect(() => {
-    getCart();
+    calculateTotalPrice(cartItems);
+    fetchCart();
   }, []);
 
-  const decreaseQuantity = async (
-    productId: number,
-    currentQuantity: number
+  const calculateTotalPrice = (
+    items: (ICartItem & { product?: IProductDetail; selected: boolean })[]
+  ) => {
+    const total = items.reduce((sum, item) => {
+      if (item.selected) {
+        const price =
+          item.product?.newPrice && item.product.newPrice > 0
+            ? item.product.newPrice
+            : item.product?.price || 0;
+        return sum + price * item.quantity;
+      }
+      return sum;
+    }, 0);
+    setTotalPrice(total);
+  };
+
+  const toggleSelectItem = (cartItemId: string) => {
+    setCartItems((prev) => {
+      const updatedItems = prev.map((item) =>
+        item.id === cartItemId ? { ...item, selected: !item.selected } : item
+      );
+      calculateTotalPrice(updatedItems);
+      return updatedItems;
+    });
+  };
+
+  const increaseQuantity = async (
+    cartItemId: string,
+    productId: string,
+    price: number,
+    newPrice: number,
+    discount: number
   ) => {
     try {
-      const userId = localStorage.getItem('id');
-      if (!userId || currentQuantity <= 1) return;
-
-      const amountToDecrease = 1;
-      await CartApi.decreaseQuantity(userId, productId, amountToDecrease);
-      console.log(`Số lượng của sản phẩm ID ${productId} đã được giảm.`);
-      setCartItems((prevItems) =>
-        prevItems.map((item) =>
-          item.id === productId
-            ? { ...item, quantity: item.quantity - amountToDecrease }
-            : item
-        )
-      );
-      getCart();
-    } catch (error) {
-      console.error('Không thể giảm số lượng sản phẩm:', error);
-    }
-  };
-  const increaseQuantity = async (productId: number) => {
-    try {
-      const userId = localStorage.getItem('id');
+      const userId = localStorage.getItem('userId');
       if (userId === null) return;
-
-      const quantityToAdd = 1;
       const data: AddToCartRequest = {
-        product_id: productId,
-        quantity: quantityToAdd,
+        productId,
+        quantity: 1,
+        price,
+        newPrice,
+        discount,
       };
-      await CartApi.increaseQuantity(userId, data);
-      console.log(`Số lượng của sản phẩm ID ${productId} đã được tăng.`);
-
-      setCartItems((prevItems) =>
-        prevItems.map((item) =>
-          item.id === productId
-            ? { ...item, quantity: item.quantity + quantityToAdd }
-            : item
-        )
-      );
-      getCart();
+      const response = await CartApi.increaseQuantity(userId, data);
+      if (response) {
+        setCartItems((prev) =>
+          prev.map((item) =>
+            item.id === cartItemId
+              ? { ...item, quantity: item.quantity + 1 }
+              : item
+          )
+        );
+        fetchCart();
+      }
     } catch (error) {
-      console.error('Không thể tăng số lượng sản phẩm:', error);
+      console.error('Error increasing quantity:', error);
     }
   };
 
-  const handleRemoveItem = async (cartItemId: number) => {
+  const decreaseQuantity = async (
+    cartItemId: string,
+    productId: string,
+    currentQuantity: number
+  ) => {
+    if (currentQuantity <= 1) {
+      message.warning('Không thể giảm số lượng dưới 1.');
+      return;
+    }
+
     try {
-      const userId = localStorage.getItem('id');
+      const userId = localStorage.getItem('userId');
       if (userId === null) return;
 
-      // Xác nhận trước khi xóa sản phẩm
+      const quantityToReduce = 1;
+
+      const response: Response = await CartApi.decreaseQuantity(
+        userId,
+        productId,
+        quantityToReduce
+      );
+      if (response) {
+        setCartItems((prev) =>
+          prev.map((item) =>
+            item.id === cartItemId
+              ? { ...item, quantity: item.quantity - quantityToReduce }
+              : item
+          )
+        );
+        fetchCart();
+      }
+    } catch (error) {
+      console.error('Error decreasing quantity:', error);
+    }
+  };
+
+  const handleRemoveItem = async (cartItemId: string) => {
+    try {
+      const userId = localStorage.getItem('userId');
+      if (userId === null) return;
+
       const confirmDelete = window.confirm(
         'Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng không?'
       );
       if (!confirmDelete) return;
 
       await CartApi.removeCart(userId, cartItemId);
-      console.log(`Mục giỏ hàng với ID ${cartItemId} đã được xóa.`);
-      getCart();
+      setCartItems((prev) => prev.filter((item) => item.id !== cartItemId));
+      window.location.reload();
     } catch (error) {
-      console.error('Không thể xóa mục giỏ hàng:', error);
+      console.error('Error removing item:', error);
     }
   };
-  const totalPrice = cartItems.reduce(
-    (total, item) => total + item.quantity * item.price,
-    0
-  );
-
+  const handlePlaceOrder = () => {
+    const selectedItems = cartItems.filter((item) => item.selected);
+    if (selectedItems.length === 0) {
+      message.warning('Bạn chưa chọn sản phẩm nào để đặt hàng.');
+      return;
+    }
+  };
   return (
-    <div className="min-h-screen bg-gray-100 py-10">
+    <div className="min-h-screen bg-gray-100 p-10 px-20">
       <div className="container mx-auto max-w-6xl">
-        <h1 className="mb-4 text-3xl font-bold text-gray-800">GIỎ HÀNG</h1>
+        <h1 className="mb-4 text-xl font-bold text-gray-800">GIỎ HÀNG</h1>
 
         <div className="lg:grid-cols-[2fr_1fr] grid grid-cols-1 gap-6">
           {/* Sản phẩm */}
@@ -117,18 +203,43 @@ const Cart = () => {
                       checked={item.isSelected}
                       onChange={() => toggleSelectItem(item.id)}
                     />*/}
+                    <input
+                      type="checkbox"
+                      className="mr-2"
+                      checked={item.selected}
+                      onChange={() => toggleSelectItem(item.id)}
+                    />
+
                     <img
-                      className="h-24 w-24 object-cover"
-                      src={item.product.thumbnails[0]}
+                      className="h-20 w-20 object-cover"
+                      src={item.product?.thumbnails?.[0]}
                     />
 
                     <div className="ml-4">
-                      <h2 className="text-lg font-semibold">
-                        {item.product.name}
-                      </h2>
-                      <p className="text-gray-500">
-                        Đơn giá: {item.price.toLocaleString()}đ
+                      <Link to={`/ProductDetail/${item.product?.id}`}>
+                        <h2 className="text-sm font-semibold">
+                          {item.product?.name}
+                        </h2>
+                      </Link>
+
+                      <p className="font-medium text-gray-500">
+                        {item.product?.newPrice &&
+                        item.product.newPrice < item.product.price ? (
+                          <div className="flex space-x-2">
+                            <div className="text-base font-light text-gray-500 line-through">
+                              {item.product.price.toLocaleString()}đ
+                            </div>
+                            <div className="text-base font-semibold text-red-600">
+                              {item.product.newPrice.toLocaleString()}đ
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-base font-semibold text-red-600">
+                            {item.product?.price?.toLocaleString()}đ
+                          </div>
+                        )}
                       </p>
+
                       {item.price === 0 && (
                         <span className="mt-2 inline-block rounded bg-red-100 px-2 py-1 text-sm text-red-500">
                           Quà tặng miễn phí
@@ -142,7 +253,11 @@ const Cart = () => {
                       <button
                         className="bg-gray-200 px-3 py-1 text-sm"
                         onClick={() =>
-                          decreaseQuantity(item.product.id, item.quantity)
+                          decreaseQuantity(
+                            item.id,
+                            item.productId,
+                            item.quantity
+                          )
                         }
                       >
                         -
@@ -150,7 +265,15 @@ const Cart = () => {
                       <span className="mx-2 text-lg">{item.quantity}</span>
                       <button
                         className="bg-gray-200 px-3 py-1 text-sm"
-                        onClick={() => increaseQuantity(item.product.id)}
+                        onClick={() =>
+                          increaseQuantity(
+                            item.id,
+                            item.productId,
+                            item.price,
+                            item.newPrice || 0,
+                            item.product?.discount || 0
+                          )
+                        }
                       >
                         +
                       </button>
@@ -188,7 +311,7 @@ const Cart = () => {
             <h2 className="mb-4 text-lg font-semibold">Thông Tin Đơn Hàng</h2>
             <div className="flex justify-between text-gray-600">
               <span>Tổng sản phẩm đã chọn</span>
-              <span>{cartItems.length}</span>
+              <span>{cartItems.filter((item) => item.selected).length}</span>
             </div>
             <div className="flex justify-between text-gray-600">
               <span>Tạm tính</span>
@@ -201,11 +324,23 @@ const Cart = () => {
               </span>
             </div>
             <div className="mt-4 flex justify-center">
-              <Link to="/Checkout">
-                <button className="rounded-3xl bg-orange-500 px-20 py-2 text-white hover:bg-orange-400">
+              {cartItems.filter((item) => item.selected).length > 0 ? (
+                <Link to="/Checkout">
+                  <button
+                    className="rounded-3xl bg-orange-500 px-20 py-2 text-white hover:bg-orange-400"
+                    onClick={handlePlaceOrder}
+                  >
+                    ĐẶT HÀNG
+                  </button>
+                </Link>
+              ) : (
+                <button
+                  className="cursor-not-allowed rounded-3xl bg-gray-400 px-20 py-2 text-white"
+                  disabled
+                >
                   ĐẶT HÀNG
                 </button>
-              </Link>
+              )}
             </div>
           </div>
         </div>

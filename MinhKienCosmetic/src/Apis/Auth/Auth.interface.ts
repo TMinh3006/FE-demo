@@ -1,63 +1,52 @@
-export interface IRegister {
-  address: string;
-  password: string;
-  fullname: string;
-  phone_number: string;
-  retype_password: string;
-  date_of_birth: string;
-  facebook_account_id: number;
-  google_account_id: number;
-  role_id: number;
-}
-export interface IErrorResponse {
-  response?: {
-    data?: {
-      message?: string;
-    };
-  };
-}
-// src/types/User.ts
 export interface Role {
-  id: number;
   name: string;
+  description: string;
+  permissions: string[];
 }
-
-export interface Authority {
-  authority: string;
-}
-
-export interface User {
-  createdAt: string;
-  updatedAt: string;
-  id: number;
-  fullName: string;
-  email: string;
-  phoneNumber: string;
-  address: string;
-  password: string;
-  active: boolean;
-  dateOfBirth: string;
-  facebookAccountId: number;
-  googleAccountId: number;
-  role: Role;
-  enabled: boolean;
+export interface IRegister {
+  id: string;
   username: string;
-  authorities: Authority[];
-  accountNonLocked: boolean;
-  credentialsNonExpired: boolean;
-  accountNonExpired: boolean;
-  fullname: string;
-  phone_number: string;
-  date_of_birth: string;
+  dob: string;
+  email: string;
+  emailVerified: boolean;
+  password: string;
+  name: string | null;
+  gender: 'male' | 'female' | 'other' | null;
+  phoneNumber: string;
+  roles: Role[];
 }
 
-export interface LoginResponse {
-  user: User;
+export interface ApiResponse {
+  code: number;
   message: string;
-  token: string;
+  result: {
+    token: string;
+    expiryTime: string;
+  };
 }
 
 export interface ILoginForm {
   password: string;
-  phone_number: string;
+  username: string;
+}
+export interface IUser {
+  code: number;
+  result: {
+    id: string;
+    username: string;
+    dob?: string | null;
+    email?: string;
+    emailVerified: boolean;
+    password: string;
+    name: string | null;
+    gender: string | null;
+    age: number | null;
+    phoneNumber: string | null;
+    roles: Role[];
+    active: boolean;
+  };
+}
+export interface IUserResponse {
+  code: number;
+  result: IUser[];
 }

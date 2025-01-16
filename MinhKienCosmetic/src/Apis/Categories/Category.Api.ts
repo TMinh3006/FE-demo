@@ -4,22 +4,16 @@ import { apiService } from '@/configs/apiService';
 export default {
   getCategories(): Promise<ICategory[]> {
     return apiService
-      .get('/api/v1/categories?page=0&limit=80')
+      .get('/products/categories/get-all-categories')
       .then((response) => {
         console.log('API response:', response);
         return response.data;
       });
   },
-  getICategories(page: number, limit: number): Promise<ICategory[]> {
-    return apiService
-      .get(`/api/v1/categories`, {
-        params: { page, limit },
-      })
-      .then((response) => response.data);
-  },
+
   getCategoryById(categoryId: string): Promise<ICategory> {
     return apiService
-      .get(`/api/v1/categories/${categoryId}`)
+      .get(`/products/categories/${categoryId}`)
       .then((response) => {
         console.log('Category response:', response);
         return response.data;
@@ -28,5 +22,11 @@ export default {
         console.error('Error fetching category by ID:', error);
         throw error;
       });
+  },
+
+  getCategoriesByNames(categoryNames: string[]): Promise<ICategory[]> {
+    return this.getCategories().then((categories) =>
+      categories.filter((category) => categoryNames.includes(category.name))
+    );
   },
 };

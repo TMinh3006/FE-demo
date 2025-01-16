@@ -1,43 +1,48 @@
 import { apiService } from '@/configs/apiService';
-import { IRegister, ILoginForm, LoginResponse, User } from './Auth.interface';
+import { IRegister, ILoginForm, IUser, ApiResponse } from './Auth.interface';
 
 export default {
   userRegister(data: IRegister): Promise<{ message: string }> {
-    const userData = {
-      ...data,
-      role_id: 2,
-    };
-
     return apiService
-      .post('/api/v1/users/register', userData)
+      .post('/identity/users/registration', data)
 
       .then((response) => {
         return response.data;
       });
   },
 
-  userLogin(data: ILoginForm): Promise<LoginResponse> {
+  userLogin(data: ILoginForm): Promise<ApiResponse> {
     return apiService
-      .post('/api/v1/users/login', data)
+      .post('/identity/auth/token', data)
 
       .then((response) => {
         return response.data;
       });
   },
-  getUserById(id: string): Promise<User> {
+  getUserById(userId: string): Promise<IUser> {
     return apiService
-      .get(`/api/v1/users/details/${id}`)
+      .get(`/profile/users/${userId}`)
 
       .then((response) => {
         return response.data;
       });
   },
-  updateUserById(id: string, data: Partial<User>): Promise<User> {
+  getUserinfo(): Promise<IUser> {
     return apiService
-      .put(`/api/v1/users/details/${id}`, data)
+      .get('/identity/users/my-info')
 
       .then((response) => {
-        localStorage.setItem('accessToken', response.data);
+        return response.data;
+      });
+  },
+  updateUserById(
+    userId: string,
+    updatedUser: Partial<IUser['result']>
+  ): Promise<IUser> {
+    return apiService
+      .put(`/profile/users/${userId}`, updatedUser)
+
+      .then((response) => {
         return response.data;
       });
   },

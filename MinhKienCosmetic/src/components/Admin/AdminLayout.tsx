@@ -5,27 +5,49 @@ import {
   TagsOutlined,
   AppstoreOutlined,
   LogoutOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import Logo from '@/assets/logo1.png';
-import React from 'react';
+import React, { useEffect } from 'react';
 
 const { Header, Content, Sider } = Layout;
 
 const AdminLayout: React.FC = () => {
   const token = localStorage.getItem('accessToken');
-  const userRole = localStorage.getItem('role');
+  const roles = JSON.parse(localStorage.getItem('roles') || '[]');
   const navigate = useNavigate();
 
-  if (!token || userRole !== '1') {
-    window.location.href = '/admin';
-  }
+  useEffect(() => {
+    if (
+      !token ||
+      roles.some((role: { name: string }) => role.name !== 'ADMIN')
+    ) {
+      navigate('/login');
+    } else if (location.pathname === '/admin') {
+      navigate('/admin/users');
+    }
+  }, [token, roles, navigate, location]);
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
-    localStorage.removeItem('role');
+    localStorage.removeItem('roles');
     navigate('/Login');
   };
+
+  const selectedKey = location.pathname.includes('/admin/products')
+    ? '1'
+    : location.pathname.includes('/admin/categories')
+      ? '2'
+      : location.pathname.includes('/admin/users')
+        ? '3'
+        : location.pathname.includes('/admin/orders')
+          ? '4'
+          : location.pathname.includes('/admin/blogs')
+            ? '5'
+            : location.pathname.includes('/admin/brands')
+              ? '6'
+              : '';
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -41,7 +63,7 @@ const AdminLayout: React.FC = () => {
           }}
         >
           <Link to="/">
-            <img alt="logo" src={Logo} className="h-10 w-10 cursor-pointer" />
+            <img alt="logo" src={Logo} className="h-20 w-20 cursor-pointer" />
           </Link>
           <div className="logo" style={{ marginTop: '10px' }}>
             Admin
@@ -51,9 +73,9 @@ const AdminLayout: React.FC = () => {
           theme="light"
           mode="inline"
           style={{ backgroundColor: '#FF69B4' }}
+          selectedKeys={[selectedKey]}
         >
           {' '}
-          {/* Màu hồng cho Menu */}
           <Menu.Item key="1" icon={<AppstoreOutlined />}>
             <Link to="/admin/products">Quản lý sản phẩm</Link>
           </Menu.Item>
@@ -65,6 +87,12 @@ const AdminLayout: React.FC = () => {
           </Menu.Item>
           <Menu.Item key="4" icon={<ShoppingCartOutlined />}>
             <Link to="/admin/orders">Quản lý đơn hàng</Link>
+          </Menu.Item>
+          <Menu.Item key="5" icon={<FileTextOutlined />}>
+            <Link to="/admin/blogs">Quản lý Blog</Link>
+          </Menu.Item>
+          <Menu.Item key="6" icon={<TagsOutlined />}>
+            <Link to="/admin/brands">Quản lý Thương Hiệu</Link>
           </Menu.Item>
         </Menu>
       </Sider>
@@ -91,8 +119,10 @@ const AdminLayout: React.FC = () => {
             </button>
           </div>
         </Header>
-        <Content style={{ margin: ' 0', overflow: 'initial' }}>
-          <div style={{ padding: 24, background: '#FDBCCF' }}>
+        <Content
+          style={{ margin: ' 0', overflow: 'initial', background: '#FDBCCF' }}
+        >
+          <div style={{ padding: 24 }}>
             <Outlet />
             {''}
           </div>

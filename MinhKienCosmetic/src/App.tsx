@@ -22,21 +22,35 @@ import Orderlist from './components/Admin/Dashboard/OrderList';
 import React from 'react';
 import OrderDetail from './components/Customer/DetailOrder';
 import BrandPage from './components/Brands/BrandPage';
+import BlogDetail from './scenes/BlogPage/BlogDetail';
+import FailurePage from './components/Cart/FailurePage';
+import AllBrands from './components/Brands/AllBrands';
+import BlogManagement from './components/Admin/Dashboard/Blog';
+import BestSellingPage from './components/Items/MoreItems';
+import DiscountDetails from './scenes/Homepage/DiscoutItems/DiscountDetail';
+import BrandManagement from './components/Admin/Dashboard/Brands';
 
-const PrivateAdminRoute: React.FC<{ children: JSX.Element }> = ({
-  children,
-}) => {
+const checkTokenAndRole = () => {
   const token = localStorage.getItem('accessToken');
-  const role = localStorage.getItem('role');
+  const roles = JSON.parse(localStorage.getItem('roles') || '[]');
 
-  if (!token || role !== '1') {
-    return <Navigate to="/Login" replace />;
-  }
+  // Kiểm tra xem người dùng có quyền admin không
+  const isAdmin = roles.some((role: { name: string }) => role.name === 'ADMIN');
 
-  return children;
+  return { token, isAdmin };
 };
 
-function App() {
+const PrivateAdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { token, isAdmin } = checkTokenAndRole();
+
+  if (!token || !isAdmin) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+const App = () => {
   const [isTopOfPage, setIsTopOfPage] = useState(false);
 
   useEffect(() => {
@@ -58,21 +72,26 @@ function App() {
             <Navbar isTopOfPage={isTopOfPage} />
           </header>
         )}
-        <main className={`flex-grow ${isAdminPath ? '' : 'mt-[195px]'}`}>
+        <main className={`flex-grow ${isAdminPath ? '' : 'mt-[170px]'}`}>
           <Routes>
             <Route path={`/`} element={<Homepage />} />
-            <Route path={`/category/:id`} element={<CategoryPage />} />
+            <Route path={`/category/:categoryId`} element={<CategoryPage />} />
             <Route path={`/Blog`} element={<BlogPage />} />
             <Route path={`/ProductDetail/:id`} element={<ProductDetail />} />
             <Route path={'/brand/:id'} element={<BrandPage />} />
             <Route path={`/Cart`} element={<Cart />} />
+            <Route path={`/AllBrands`} element={<AllBrands />} />
+            <Route path={`/BestSell`} element={<BestSellingPage />} />
+            <Route path={`/Discount`} element={<DiscountDetails />} />
             <Route path={`/Checkout`} element={<CheckoutPage />} />
             <Route path={`/SuccessPage`} element={<OrderSuccessPage />} />
+            <Route path={`/FailurePage `} element={<FailurePage />} />
             <Route path={`/orders`} element={<OrderList />} />
             <Route path="/order/:id" element={<OrderDetail />} />
             <Route path={`/Login`} element={<LoginPage />} />
             <Route path={`/register`} element={<RegisterPage />} />
             <Route path={`/CustomerInfo`} element={<CustomerInfo />} />
+            <Route path={`/blog/:id`} element={<BlogDetail />} />
 
             <Route
               path="/admin"
@@ -86,17 +105,19 @@ function App() {
               <Route path="categories" element={<CategoryList />} />
               <Route path="users" element={<UserList />} />
               <Route path="orders" element={<Orderlist />} />
+              <Route path="blogs" element={<BlogManagement />} />
+              <Route path="brands" element={<BrandManagement />} />
             </Route>
           </Routes>
         </main>
         {!isAdminPath && (
-          <footer className="mt-4 drop-shadow">
+          <footer className="drop-shadow">
             <Footer />
           </footer>
         )}
       </Router>
     </div>
   );
-}
+};
 
 export default App;

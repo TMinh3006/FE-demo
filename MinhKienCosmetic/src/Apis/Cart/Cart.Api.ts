@@ -1,28 +1,23 @@
-import {
-  AddToCartRequest,
-  ICartItem,
-  IDecreaseQuantityResponse,
-  IDeleteCartResponse,
-} from './Cart.Interface';
+import { AddToCartRequest, IApiResponse, Response } from './Cart.Interface';
 import { apiService } from '@/configs/apiService';
 
 export default {
-  getCartById(id: string): Promise<ICartItem[]> {
+  getCartById(id: string): Promise<IApiResponse> {
     return apiService
-      .get(`/api/v1/carts/user/${id}`)
+      .get(`/orders/cart/${id}`)
 
       .then((response) => {
-        return response.data.cartItems;
+        return response.data;
       });
   },
   decreaseQuantity(
     userId: string,
-    productId: number,
-    amount: number
-  ): Promise<IDecreaseQuantityResponse> {
+    productId: string,
+    quantityToReduce: number
+  ): Promise<Response> {
     return apiService
-      .post(
-        `/api/v1/carts/user/${userId}/decrease?productId=${productId}&amount=${amount}`
+      .patch(
+        `/orders/cart/${userId}/items/${productId}/reduce?quantityToReduce=${quantityToReduce}`
       )
 
       .then((response) => {
@@ -35,23 +30,21 @@ export default {
     data: AddToCartRequest
   ): Promise<AddToCartRequest[]> {
     return apiService
-      .post(`/api/v1/carts/user/${userId}/add`, data)
+      .post(`/orders/cart/${userId}/items`, data)
 
       .then((response) => {
         return response.data;
       });
   },
 
-  removeCart(userId: string, cartItemId: number): Promise<IDeleteCartResponse> {
+  removeCart(userId: string, cartItemId: string): Promise<Response> {
     return apiService
-      .delete(`/api/v1/carts/user/${userId}/remove?cartItemId=${cartItemId}`)
+      .delete(`orders/cart/${userId}/items/${cartItemId}`)
       .then((response) => {
         return response.data;
       });
   },
   clearCart(userId: string): Promise<void> {
-    return apiService
-      .delete(`/api/v1/carts/user/${userId}/clear`)
-      .then(() => {});
+    return apiService.delete(`/orders/cart/${userId}/clear`).then(() => {});
   },
 };

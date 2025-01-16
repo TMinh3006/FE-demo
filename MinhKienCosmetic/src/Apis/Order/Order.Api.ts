@@ -1,17 +1,36 @@
 import { apiService } from '@/configs/apiService';
-import { IOrder } from './Order.interface';
+import {
+  ICreateOrderResponse,
+  IOrder,
+  IShippingFeeResponse,
+} from './Order.interface';
 
 export default {
-  createOrder(orderData: IOrder): Promise<IOrder> {
+  createOrder(orderData: IOrder): Promise<ICreateOrderResponse> {
     return apiService
-      .post('/api/v1/orders', orderData)
+      .post('orders/create-order', orderData)
       .then((response) => {
         console.log('Order created successfully:', response);
-        return response.data;
+        return response.data as ICreateOrderResponse;
       })
       .catch((error) => {
         console.error('Error creating order:', error);
         throw error;
+      });
+  },
+  getShippingFee(
+    address: string,
+    totalMoney: number
+  ): Promise<IShippingFeeResponse> {
+    return apiService
+      .get(`/orders/shipping-fee`, {
+        params: {
+          address,
+          totalMoney,
+        },
+      })
+      .then((response) => {
+        return response.data;
       });
   },
 };

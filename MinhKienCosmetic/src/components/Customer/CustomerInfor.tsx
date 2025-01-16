@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Avatar, Card, Layout, Menu, Typography } from 'antd';
 import UserInfo from './UserInfo';
 import OrderList from './OrderList';
-import { User } from '@/Apis/Auth/Auth.interface';
+import { IUser } from '@/Apis/Auth/Auth.interface';
 import userService from '@/Apis/Auth/Auth.api';
 
 import { UserOutlined } from '@ant-design/icons';
@@ -12,12 +12,12 @@ const { Sider, Content } = Layout;
 const { Title } = Typography;
 
 const CustomerInfo: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<IUser | null>(null);
   const [activeMenu, setActiveMenu] = useState<string>('personalInfo');
 
   const getUser = useCallback(async () => {
     try {
-      const id = localStorage.getItem('id');
+      const id = localStorage.getItem('userId');
       if (id === null) return;
       const response = await userService.getUserById(id);
       setUser(response);
@@ -47,7 +47,12 @@ const CustomerInfo: React.FC = () => {
 
   return (
     <Layout
-      style={{ minHeight: '50vh', background: '#F9E1E0', padding: '20px' }}
+      style={{
+        minHeight: '50vh',
+        background: '#F9E1E0',
+        padding: '3rem',
+        paddingTop: '20px',
+      }}
     >
       <Sider
         width={300}
@@ -63,7 +68,7 @@ const CustomerInfo: React.FC = () => {
             level={3}
             style={{ color: '#fff', margin: '10px 0', fontSize: '24px' }}
           >
-            {user?.fullName}
+            {user?.result.name}
           </Title>
         </div>
         <Menu

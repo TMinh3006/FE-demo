@@ -1,35 +1,35 @@
-import { ICategory } from './ACategory.interface';
+import { Category, ICategory } from './ACategory.interface';
 import { apiService } from '@/configs/apiService';
 
 export default {
   getCategories(): Promise<ICategory[]> {
     return apiService
-      .get('/api/v1/categories?page=0&limit=80')
+      .get('/products/categories/get-all-categories')
       .then((response) => {
         console.log('API response:', response);
         return response.data;
       });
   },
 
-  createCategory(categoryData: ICategory): Promise<ICategory> {
+  createCategory(categoryData: Category): Promise<void> {
     return apiService
-      .post('/api/v1/categories', categoryData)
+      .post('/products/categories/create-category', categoryData)
       .then((response) => {
         console.log('Category created:', response);
         return response.data;
       });
   },
 
-  updateCategory(id: number, categoryData: ICategory): Promise<ICategory> {
+  updateCategory(id: string, categoryData: Category): Promise<void> {
     return apiService
-      .put(`/api/v1/categories/${id}`, categoryData)
+      .put(`/products/categories/${id}`, categoryData)
       .then((response) => {
         console.log('Category updated:', response);
         return response.data;
       });
   },
-  deleteCategory(id: number): Promise<void> {
-    return apiService.delete(`/api/v1/categories/${id}`).then((response) => {
+  deleteCategory(id: string): Promise<void> {
+    return apiService.delete(`/products/categories/${id}`).then((response) => {
       console.log('Category deleted:', response);
     });
   },

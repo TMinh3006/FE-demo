@@ -1,5 +1,5 @@
 export interface IBrands {
-  id: number;
+  id: string;
   name: string;
   thumbnail: string;
 }
@@ -10,15 +10,13 @@ export interface IProduct {
   price: number;
   quantity: number;
   thumbnails: string[];
-  ingredients: string[]; // Có thể thay đổi kiểu nếu cần thiết
+  ingredients: string[];
   description: string;
   userManual: string;
   categoryName: string;
   brandName: string;
-  created_at: string; // Thay đổi thành Date nếu bạn muốn chuyển đổi
-  updated_at: string; // Thay đổi thành Date nếu bạn muốn chuyển đổi
-  category_id: number;
-  brand_id: number;
+  categoryId: number;
+  brandId: number;
 }
 
 export interface IProductResponse {

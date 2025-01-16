@@ -1,79 +1,88 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import {
-  Row,
-  Col,
-  Pagination,
-  Select,
-  Spin,
-  Checkbox,
-  notification,
-} from 'antd';
+import { Row, Col, Pagination, Select, Spin, Checkbox } from 'antd';
 import { Rate } from 'antd';
 
-import brandApi from '@/Apis/Brands/Brand.api';
-import { IProduct, IProductResponse } from '@/Apis/Brands/Brands.interface';
+import brandApi from '@/Apis/Product/Product.api';
+import brandsApi from '@/Apis/Brands/Brand.api';
+import { IProduct, IProductDetail } from '@/Apis/Product/Product.interface';
+import { IBrands } from '@/Apis/Brands/Brands.interface';
+import BgBrands from '@/assets/category.webp';
 
 const { Option } = Select;
 
 const BrandPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [products, setProducts] = useState<IProduct[]>([]);
+  const [products, setProducts] = useState<IProductDetail[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0); // Thay đổi về giá trị ban đầu của page
   const [limit, setLimit] = useState(16);
-  const [totalProducts, setTotalProducts] = useState(0);
+  const [totalPages, setTotalPages] = useState<number>(0);
   const [brandName, setBrandName] = useState<string>('');
-  const [sortBy, setSortBy] = useState<string>('Giá');
+  const [sortBy, setSortBy] = useState<string>('price');
+  const [sortDirection, setSortDirection] = useState<string>('asc');
   const [priceRange, setPriceRange] = useState<[number, number] | undefined>(
     undefined
   );
-  const [brands, setBrands] = useState<string[]>([]);
-  const [brandOptions, setBrandOptions] = useState<
-    { label: string; value: string }[]
-  >([]);
+  const [brands, setBrands] = useState<Record<string, IBrands>>({});
+  const [filteredProducts, setFilteredProducts] = useState<IProductDetail[]>(
+    []
+  );
   const [selectedPriceRange, setSelectedPriceRange] = useState<string[]>([]);
-  const [allProducts, setAllProducts] = useState<IProduct[]>([]);
+
+  const [selectedBrand, setSelectedBrand] = useState<string[]>([]);
 
   const fetchProductsByBrandId = async (brandId: string) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const response: IProductResponse = await brandApi.getBrandById(
+      const response: IProduct = await brandApi.getBrandById(
         brandId,
-        page - 2, // Truyền page + 1 cho API
-        limit
+        page,
+        limit,
+        sortBy,
+        sortDirection,
+        selectedBrand,
+        priceRange
       );
-      setProducts(response.products);
-      setAllProducts(response.products);
-      setTotalProducts(response.totalPages * limit);
-
-      const uniqueBrands = Array.from(
-        new Set(response.products.map((product) => product.brandName))
-      );
-      const brandOptions = uniqueBrands.map((brand) => ({
-        label: brand,
-        value: brand,
-      }));
-      setBrandOptions(brandOptions);
+      setProducts(response.result.products);
+      setFilteredProducts(response.result.products);
+      setTotalPages(response.result.totalPages);
     } catch (error) {
       console.error('Lỗi khi lấy sản phẩm:', error);
-      setProducts([]);
-      setAllProducts([]);
-      notification.error({
-        message: 'Lỗi',
-        description: 'Không thể tải sản phẩm. Vui lòng thử lại.',
-      });
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchBrandName = async (brandId: string) => {
+  useEffect(() => {
+    const fetchBrands = async () => {
+      const fetchedBrands: Record<string, IBrands> = {};
+      try {
+        for (const product of products) {
+          const brandId = product.brandId;
+          if (brandId && !fetchedBrands[brandId]) {
+            const brand = await brandsApi.getBrandId(brandId);
+            fetchedBrands[brandId] = brand;
+          }
+        }
+        setBrands((prevBrands) => ({ ...prevBrands, ...fetchedBrands }));
+      } catch (error) {
+        console.error('Error fetching brands:', error);
+      }
+    };
+
+    if (products.length > 0) {
+      fetchBrands();
+    }
+  }, [products]);
+
+  const fetchBrandName = async (id: string) => {
     try {
-      const response = await brandApi.getBrandById(brandId, page - 2, limit);
-      setBrandName(response.products[0]?.brandName || 'Thương hiệu');
+      const response = await brandsApi.getBrandId(id);
+
+      setBrandName(response.name || 'Thương hiệu');
     } catch (error) {
-      console.error('Error fetching brand name:', error);
+      console.error('Error fetching category name:', error);
       setBrandName('Thương hiệu');
     }
   };
@@ -85,38 +94,17 @@ const BrandPage: React.FC = () => {
     }
   }, [id, page, limit]);
 
-  useEffect(() => {
-    if (allProducts.length > 0) {
-      const filteredByPrice = allProducts.filter((product) => {
-        const productPrice = product.price;
-        const [minPrice, maxPrice] = priceRange || [0, Infinity];
-        return productPrice >= minPrice && productPrice <= maxPrice;
-      });
-
-      const filteredByBrand = filteredByPrice.filter((product) => {
-        return brands.length === 0 || brands.includes(product.brandName);
-      });
-
-      const sortedProducts = [...filteredByBrand].sort((a, b) => {
-        if (sortBy === 'price_asc') {
-          return a.price - b.price;
-        } else if (sortBy === 'price_desc') {
-          return b.price - a.price;
-        }
-        return 0;
-      });
-
-      setProducts(sortedProducts);
-    }
-  }, [priceRange, brands, allProducts, sortBy]);
-
-  const handlePageChange = (page: number, pageSize: number) => {
-    setPage(page); // Chuyển đổi page từ 1 sang 0
-    setLimit(pageSize);
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
   };
 
   const handleSortChange = (value: string) => {
-    setSortBy(value);
+    if (value.startsWith('price')) {
+      setSortBy('price');
+    } else if (value.startsWith('name')) {
+      setSortBy('name');
+    }
+    setSortDirection(value.endsWith('_asc') ? 'asc' : 'desc');
   };
 
   const handlePriceRangeChange = (checkedValues: string[]) => {
@@ -143,31 +131,56 @@ const BrandPage: React.FC = () => {
     setSelectedPriceRange(checkedValues);
   };
 
+  const brandOptions = Object.values(brands).map((brand) => ({
+    label: brand.name,
+    value: brand.id,
+  }));
+
+  useEffect(() => {
+    if (selectedBrand.length === 0) {
+      setFilteredProducts(products);
+    } else {
+      const filtered = products.filter((product) =>
+        selectedBrand.includes(product.brandId)
+      );
+      setFilteredProducts(filtered);
+    }
+  }, [selectedBrand, products]);
+
   const handleBrandChange = (checkedValues: string[]) => {
-    setBrands(checkedValues);
+    setSelectedBrand(checkedValues);
+  };
+  const handleLimitChange = (value: number) => {
+    setLimit(value);
   };
 
   if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <Spin size="large" />
-      </div>
-    );
+    return <Spin />;
   }
 
   return (
-    <div className="m-12 flex flex-col">
-      <h1 className="-mb-1 text-2xl font-bold">{brandName}</h1>
-      <div className="flex items-end justify-end">
-        <h3 className="mx-4 my-3 text-lg font-semibold">Sắp xếp theo</h3>
-        <Select
-          value={sortBy}
-          onChange={handleSortChange}
-          className="mb-4 h-auto w-1/5"
-        >
-          <Option value="price_asc">Giá tăng dần</Option>
-          <Option value="price_desc">Giá giảm dần</Option>
-        </Select>
+    <div className="mx-12 mb-4 flex flex-col">
+      <img
+        src={BgBrands}
+        className="h-[200px] w-full object-cover"
+        alt="Brand Background"
+      />
+      <div className="m-4 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">{brandName}</h1>
+        <div className="flex items-center justify-center">
+          <h3 className="mr-4 text-base font-semibold">Sắp xếp theo</h3>
+          <Select
+            style={{ height: 40, width: 200 }}
+            value={`${sortBy}_${sortDirection}`}
+            onChange={handleSortChange}
+            className="rounded-md"
+          >
+            <Option value="price_asc">Giá tăng dần</Option>
+            <Option value="price_desc">Giá giảm dần</Option>
+            <Option value="name_asc">Tên A-Z</Option>
+            <Option value="name_desc">Tên Z-A</Option>
+          </Select>
+        </div>
       </div>
 
       <div className="mt-1 flex flex-row">
@@ -186,44 +199,74 @@ const BrandPage: React.FC = () => {
 
           <h3 className="my-3 text-lg font-semibold">Thương hiệu</h3>
           <Checkbox.Group
-            className="flex flex-col"
+            className="flex flex-col font-medium"
             options={brandOptions}
-            value={brands}
+            value={selectedBrand}
             onChange={handleBrandChange}
           />
         </div>
 
         <div className="w-full pl-12">
-          <Row className="flex flex-wrap">
-            {Array.isArray(products) && products.length > 0 ? (
-              products.map((product) => (
+          <Row className="flex flex-wrap" gutter={12}>
+            {filteredProducts.length > 0 ? (
+              filteredProducts.map((product) => (
                 <Col
                   className="m-3 flex flex-col items-center justify-center rounded-md bg-white p-4 shadow-md"
                   key={product.id}
                   span={5}
                 >
-                  {product.thumbnails.length > 0 ? (
-                    <img
-                      src={product.thumbnails[0]}
-                      alt={product.name}
-                      className="h-40 w-40 rounded-md object-cover"
-                    />
+                  {Array.isArray(product.thumbnails) &&
+                  product.thumbnails.length > 0 ? (
+                    <div className="relative h-40 w-full overflow-hidden rounded-md">
+                      <img
+                        src={product.thumbnails[0]}
+                        alt={product.name}
+                        className="absolute h-full w-full rounded-md object-cover transition-opacity duration-300 hover:opacity-0"
+                      />
+
+                      <img
+                        src={product.thumbnails[1]}
+                        alt={`${product.name}-hover`}
+                        className="absolute h-full w-full rounded-md object-cover opacity-0 transition-opacity duration-300 hover:opacity-100"
+                      />
+                    </div>
                   ) : (
-                    <div className="flex h-40 w-40 items-center justify-center rounded-md bg-gray-200">
+                    <div className="flex h-full w-full items-center justify-center rounded-md bg-gray-200">
                       <span>No image</span>
                     </div>
                   )}
-                  <div className="mt-3 w-full">{product.brandName}</div>
+                  <div className="mt-3 w-full font-semibold hover:underline">
+                    <Link to={`/brand/${product.brandId}`}>
+                      <span className="hover:!text-black">
+                        {brands[product.brandId]?.name || 'Đang tải...'}
+                      </span>
+                    </Link>
+                  </div>
                   <Link to={`/ProductDetail/${product.id}`}>
-                    <button className="truncate-limit-custom mt-2 w-full text-center text-base font-semibold">
+                    <button className="truncate-limit-custom w-full hover:!font-bold hover:!text-black">
                       {product.name}
                     </button>
                   </Link>
-                  <div className="mt-2 flex items-center">
-                    <Rate className="mr-2 text-yellow-500" />
-                  </div>
-                  <div className="text-lg text-red-500">
+                  <div className="text-sm font-semibold text-red-600">
                     {product.price.toLocaleString()}đ
+                  </div>
+
+                  <div className="flex w-full space-x-1">
+                    <div className="mt-1 flex flex-grow items-center justify-center">
+                      <Rate
+                        className={`mr-1 ${product.sold > 0 ? 'text-yellow-500' : 'text-gray-400'}`}
+                        value={product.sold > 0 ? 4.5 : 0}
+                        disabled
+                        style={{ fontSize: '12px' }}
+                      />
+                    </div>
+
+                    <div className="flex flex-grow items-center justify-center space-x-1">
+                      <div className="text-xs text-slate-600">Đã bán:</div>
+                      <div className="text-xs font-semibold text-gray-800">
+                        {product.sold}
+                      </div>
+                    </div>
                   </div>
                 </Col>
               ))
@@ -236,9 +279,11 @@ const BrandPage: React.FC = () => {
             <Pagination
               current={page}
               pageSize={limit}
-              total={totalProducts}
+              total={totalPages}
               onChange={handlePageChange}
               showSizeChanger={false}
+              onShowSizeChange={(_, size) => handleLimitChange(size)}
+              pageSizeOptions={['8', '16', '32', '64']}
             />
           </div>
         </div>
