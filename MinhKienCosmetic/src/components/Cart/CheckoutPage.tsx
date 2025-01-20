@@ -125,7 +125,6 @@ const CheckoutPage = () => {
         } else {
           navigate('/SuccessPage');
         }
-        window.location.reload();
       } else {
         throw new Error('Lỗi trong quá trình tạo đơn hàng.');
       }
